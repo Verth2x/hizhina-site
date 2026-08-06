@@ -1,0 +1,11 @@
+# На VDS с Nginx Proxy Manager: не публиковать web/directus наружу.
+# Запуск: docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile proxy up -d --build
+#
+# Перед этим задайте в .env домены и секреты, DNS A/AAAA на IP сервера.
+
+services:
+  web:
+    ports: !reset []
+
+  directus:
+    ports: !reset []

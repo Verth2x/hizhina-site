@@ -1,0 +1,107 @@
+name: hizhina
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-directus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-directus-change-me}
+      POSTGRES_DB: ${POSTGRES_DB:-directus}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+
+  directus:
+    image: directus/directus:11.5.1
+    restart: unless-stopped
+    ports:
+      - '${DIRECTUS_PUBLISH:-8055}:8055'
+    environment:
+      SECRET: ${DIRECTUS_SECRET:-replace-with-long-random-string}
+      DB_CLIENT: pg
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB:-directus}
+      DB_USER: ${POSTGRES_USER:-directus}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-directus-change-me}
+      ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD:-change-me-admin-password}
+      PUBLIC_URL: ${DIRECTUS_PUBLIC_URL:-http://localhost:8055}
+      WEBSOCKETS_ENABLED: 'true'
+      CORS_ENABLED: 'true'
+      CORS_ORIGIN: 'true'
+    volumes:
+      - directus_uploads:/directus/uploads
+      - directus_extensions:/directus/extensions
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+        NEXT_PUBLIC_IMAGE_HOST: ${NEXT_PUBLIC_IMAGE_HOST:-localhost:8055}
+        NEXT_PUBLIC_YANDEX_METRICA_ID: ${NEXT_PUBLIC_YANDEX_METRICA_ID:-}
+        DIRECTUS_URL: http://directus:8055
+        # На этапе build Directus в сети ещё нет — собираем из site-content.ts.
+        # В runtime CONTENT_FALLBACK пустой: источник — Directus.
+        CONTENT_FALLBACK: static
+        APP_ENV: ${APP_ENV:-production}
+    restart: unless-stopped
+    ports:
+      - '${WEB_PUBLISH:-3000}:3000'
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      DIRECTUS_URL: http://directus:8055
+      DIRECTUS_TOKEN: ${DIRECTUS_TOKEN:-}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:-change-me-revalidate-secret}
+      CONTENT_FALLBACK: ${CONTENT_FALLBACK:-}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      NEXT_PUBLIC_IMAGE_HOST: ${NEXT_PUBLIC_IMAGE_HOST:-localhost:8055}
+    depends_on:
+      - directus
+    networks:
+      - internal
+
+  # Профиль proxy — на VDS: docker compose --profile proxy up -d --build
+  # Локально обычно не нужен. На VDS закройте 3000/8055 файрволом
+  # или задайте WEB_PUBLISH / DIRECTUS_PUBLISH пустыми через override.
+  npm:
+    profiles: ['proxy']
+    image: jc21/nginx-proxy-manager:2.12.3
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '81:81'
+    volumes:
+      - npm_data:/data
+      - npm_letsencrypt:/etc/letsencrypt
+    depends_on:
+      - web
+      - directus
+    networks:
+      - internal
+
+volumes:
+  pgdata:
+  directus_uploads:
+  directus_extensions:
+  npm_data:
+  npm_letsencrypt:
+
+networks:
+  internal:
+    driver: bridge

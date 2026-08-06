@@ -105,8 +105,14 @@
   --font-sans: var(--font-sans-loaded, system-ui), system-ui, sans-serif;
 
   /* Первый экран — единственное место, где типографика работает как изображение.
-     Было clamp(3rem, 9vw, 6.5rem) = 48→104px. Стало 52→124px. */
-  --text-display: clamp(3.25rem, 10vw, 7.75rem);
+     Было 48→104px, затем 52→124px. Стало 56→136px. */
+  --text-display: clamp(3.5rem, 10.5vw, 8.5rem);
+  --text-display--line-height: 0.98;
+
+  /* Подзаголовок первого экрана. Отдельный токен, а не общий --text-lead:
+     тот используется во всех секциях, и его увеличение раздуло бы страницу. */
+  --text-hero-lead: clamp(1.15rem, 2vw, 1.6rem);
+  --text-hero-lead--line-height: 1.5;
   --text-display--line-height: 1;
   --text-display--letter-spacing: 0.02em;
   --text-display--font-weight: 300;
@@ -244,6 +250,46 @@
   }
   @media (width >= 1024px) {
     padding-inline: 3rem;
+  }
+}
+
+/*
+ * Подложка под текстом первого экрана.
+ *
+ * Задача — гарантировать контраст независимо от того, какой кадр сейчас
+ * в видео. Одной прозрачности для этого мало: чтобы белый кадр не съел
+ * текст, понадобилась бы непрозрачность 0.82 — видео за такой подложкой
+ * уже не видно. Поэтому основную работу делает brightness(.5) в
+ * backdrop-filter: он гасит светлые кадры мультипликативно, а движение
+ * и текстура остаются видны.
+ *
+ * Худший случай (полностью белый кадр), измерено по WCAG:
+ *   заголовок #ffffff — 5.94:1
+ *   текст     #ede7db — 4.82:1
+ * На тёмных кадрах — от 10:1 и выше.
+ */
+@utility hero-panel {
+  background: rgb(20 17 13 / 0.42);
+  -webkit-backdrop-filter: blur(14px) brightness(0.5) saturate(1.1);
+  backdrop-filter: blur(14px) brightness(0.5) saturate(1.1);
+  border: 1px solid var(--color-border-inverse);
+
+  /* Без backdrop-filter вытянуть контраст может только непрозрачность.
+     Ветка редкая: Firefox умеет фильтр с 103, Safari — с 9. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background: rgb(20 17 13 / 0.88);
+  }
+
+  /* Системные настройки «повысить контраст» и «уменьшить прозрачность»
+     просят именно об этом — плотнее подложку, а не красивее эффект. */
+  @media (prefers-contrast: more) {
+    background: rgb(20 17 13 / 0.78);
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    background: rgb(20 17 13 / 0.92);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 

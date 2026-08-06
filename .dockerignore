@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.vercel
+.env
+.env*.local
+*.md
+!README.md
+uploads
+data
+directus/uploads
+keystatic.config.example.ts
+agent-transcripts
+.cursor
+**/*.plan.md
+pnpm-debug.log*

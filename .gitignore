@@ -1,0 +1,23 @@
+# Зависимости и сборка
+node_modules
+.next/
+.vercel/
+out/
+
+# Переменные окружения. .env.example коммитится, .env / .env.local — нет.
+.env*.local
+.env
+
+# Системное
+.DS_Store
+*.pem
+npm-debug.log*
+pnpm-debug.log*
+*.tsbuildinfo
+
+# Docker / Directus локальные данные (именованные volumes в compose,
+# но на случай bind-mount рядом с репо)
+uploads/
+directus/uploads/
+data/postgres/
+data/npm/
