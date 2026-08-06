@@ -104,7 +104,9 @@
   --font-display: var(--font-display-loaded, Verdana), Verdana, system-ui, sans-serif;
   --font-sans: var(--font-sans-loaded, system-ui), system-ui, sans-serif;
 
-  --text-display: clamp(3rem, 9vw, 6.5rem);
+  /* Первый экран — единственное место, где типографика работает как изображение.
+     Было clamp(3rem, 9vw, 6.5rem) = 48→104px. Стало 52→124px. */
+  --text-display: clamp(3.25rem, 10vw, 7.75rem);
   --text-display--line-height: 1;
   --text-display--letter-spacing: 0.02em;
   --text-display--font-weight: 300;

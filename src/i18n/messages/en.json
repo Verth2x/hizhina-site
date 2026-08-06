@@ -16,7 +16,10 @@
     "showMap": "Show on map",
     "buildRoute": "Get directions",
     "retry": "Try again",
-    "backHome": "Back to home"
+    "backHome": "Back to home",
+    "bookCabin": "Book a cabin",
+    "prevPhoto": "Previous photo",
+    "nextPhoto": "Next photo"
   },
   "popup": {
     "title": "How to book",
@@ -30,14 +33,16 @@
   },
   "sections": {
     "aboutLabel": "About",
-    "cabinsTitle": "Cabins",
-    "cabinsLead": "Two types of stay — for a couple or a group of up to four.",
+    "cabinsTitle": "A cabin for four right by the forest",
     "extrasTitle": "Extras",
     "extrasLead": "Available on site.",
     "contactsLabel": "Get in touch",
     "contactsTitle": "Contacts",
     "directionsTitle": "Getting here",
-    "notBookableSeparately": "Available only with a cabin booking. We agree on the ready time individually."
+    "notBookableSeparately": "Available only with a cabin booking. We agree on the ready time individually.",
+    "cabinsLabel": "Cabins",
+    "cabinsNote": "All cabins are the same — only the view differs. We will show the free ones when you book.",
+    "cabinRulesTitle": "House rules"
   },
   "footer": {
     "privacy": "Privacy policy",
@@ -55,7 +60,8 @@
     "toHome": "Go to the home page",
     "loading": "Loading…",
     "address": "Address",
-    "email": "Email"
+    "email": "Email",
+    "photoOf": "Photo {n} of {total}"
   },
   "notFound": {
     "title": "Page not found",

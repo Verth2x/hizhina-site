@@ -4,31 +4,38 @@ import { Button } from '@/components/ui/button';
 import type { Messages } from '@/i18n/config';
 import type { SiteContent } from '@/lib/content/types';
 import { cn } from '@/lib/utils/cn';
+import { HeroVideo } from './hero-video';
 
 export function Hero({ content, messages }: { content: SiteContent; messages: Messages }) {
-  const image = content.hero.image;
-  const hasImage = Boolean(image?.src);
+  const { video } = content.hero;
+
+  // Постер видео главнее статичной картинки: если задано видео, первый кадр
+  // берём из него, чтобы подмена «постер → видео» прошла без скачка.
+  const still = video?.poster ?? content.hero.image;
+  const hasBackdrop = Boolean(still?.src);
 
   return (
-    <section className={cn('relative isolate overflow-hidden', !hasImage && 'bg-surface-soft')}>
-      {hasImage && image ? (
+    <section className={cn('relative isolate overflow-hidden', !hasBackdrop && 'bg-surface-soft')}>
+      {hasBackdrop && still ? (
         <>
           <Image
-            src={image.src}
-            alt={image.alt ?? ''}
+            src={still.src}
+            alt={still.alt ?? ''}
             fill
             // Первый экран — почти всегда LCP-элемент. priority снимает
-            // ленивую загрузку и добавляет preload.
+            // ленивую загрузку и добавляет preload. Видео поверх грузится
+            // позже и на эту метрику уже не влияет.
             priority
             sizes="100vw"
-            placeholder={image.blurDataURL ? 'blur' : 'empty'}
-            blurDataURL={image.blurDataURL}
+            placeholder={still.blurDataURL ? 'blur' : 'empty'}
+            blurDataURL={still.blurDataURL}
             className="-z-10 object-cover"
           />
+          {video ? <HeroVideo video={video} /> : null}
           {/*
             Скрим, а не просто затемнение: текст стоит в нижней трети, поэтому
             градиент гуще снизу. Без него контраст заголовка зависел бы от того,
-            какую фотографию загрузит заказчица.
+            какой кадр загрузит заказчица.
           */}
           <div
             aria-hidden="true"
@@ -39,36 +46,36 @@ export function Hero({ content, messages }: { content: SiteContent; messages: Me
         <div aria-hidden="true" className="hatch absolute inset-0 opacity-30" />
       )}
 
-      <div className="max-w-main gutter relative mx-auto flex min-h-[78svh] flex-col justify-end pt-32 pb-16 md:min-h-[86svh]">
+      <div className="max-w-main gutter relative mx-auto flex min-h-[82svh] flex-col justify-end pt-32 pb-16 md:min-h-[92svh]">
         <p
           className={cn(
             'text-label uppercase',
-            hasImage ? 'text-text-inverse opacity-90' : 'text-text-muted',
+            hasBackdrop ? 'text-text-inverse opacity-90' : 'text-text-muted',
           )}
         >
           {messages.hero.eyebrow}
         </p>
         <h1
           className={cn(
-            'text-display mt-5 max-w-3xl',
-            hasImage ? 'text-white' : 'text-text-primary',
+            'text-display mt-6 max-w-4xl',
+            hasBackdrop ? 'text-white' : 'text-text-primary',
           )}
         >
           {content.hero.title}
         </h1>
         <p
           className={cn(
-            'text-lead mt-4 max-w-xl',
-            hasImage ? 'text-text-inverse' : 'text-text-secondary',
+            'text-lead mt-5 max-w-xl',
+            hasBackdrop ? 'text-text-inverse opacity-90' : 'text-text-secondary',
           )}
         >
           {content.hero.subtitle}
         </p>
-        <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+        <div className="mt-10 flex flex-col gap-3 sm:flex-row">
           <BookingButton size="lg" placement="hero">
             {messages.actions.book}
           </BookingButton>
-          <Button asChild variant={hasImage ? 'ghost-inverse' : 'ghost'} size="lg">
+          <Button asChild variant={hasBackdrop ? 'ghost-inverse' : 'ghost'} size="lg">
             <a href="#cabins">{messages.actions.viewCabins}</a>
           </Button>
         </div>

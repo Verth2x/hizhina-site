@@ -9,6 +9,10 @@ import type { SiteContent, SiteSettings } from './types';
      • address          — фактический адрес базы, а не юридический адрес ИП
      • directions       — ориентиры и состояние дороги
      • image у объектов — пока не заданы, Media рисует штриховку
+     • hero.video       — фоновое видео первого экрана, требования
+                          в content/TODO-CONTENT.md
+     • cabins[].gallery — фотографии домика; полоса миниатюр появляется
+                          сама, начиная с двух кадров
 --------------------------------------------------------------------------- */
 
 const settings: SiteSettings = {
@@ -38,6 +42,19 @@ const settings: SiteSettings = {
   directions: [],
 };
 
+/*
+ * TODO(заказчик): фоновое видео первого экрана. Пока не задано — показывается
+ * постер, а без постера штриховка. Подключается добавлением в hero:
+ *
+ *   video: {
+ *     mp4: '/video/hero.mp4',
+ *     webm: '/video/hero.webm',
+ *     poster: { src: '/video/hero-poster.jpg', alt: 'Домики на краю леса' },
+ *   },
+ *
+ * Требования к файлу — в content/TODO-CONTENT.md.
+ */
+
 const ru: SiteContent = {
   brand: { wordmark: 'Хижина', legalName: settings.legalName },
   hero: { title: 'База отдыха «Хижина»', subtitle: 'Отдых на природе с комфортом' },
@@ -51,19 +68,27 @@ const ru: SiteContent = {
   cabins: [
     {
       id: 'cabin-a',
-      name: 'Домик «Лесной»',
-      description: 'Панорамное окно на лес, двуспальная кровать, отопление.',
-      meta: 'до 4 гостей · 22 часа',
+      name: 'Домик',
+      description:
+        'Тёплый дом с большим окном в лес: двуспальная кровать, раскладной диван, обеденный стол и терраса. Постель, полотенца и свет — всё уже внутри, привозить ничего не нужно.',
+      meta: 'до 4 гостей · 22 часа · заезд с 14:00',
       pricePerNight: 15000,
-      priceNote: 'продление до 6 часов — 5 000 ₽',
-    },
-    {
-      id: 'cabin-b',
-      name: 'Домик «Хвойный»',
-      description: 'Компактный домик с видом на территорию, тёплый и светлый.',
-      meta: 'до 4 гостей · 22 часа',
-      pricePerNight: 15000,
-      priceNote: 'продление до 6 часов — 5 000 ₽',
+      priceUnit: 'за дом, 22 часа, до 4 гостей',
+      priceNote: 'Продление до 6 часов — 5 000 ₽',
+      features: [
+        'Двуспальная кровать',
+        'Раскладной диван на двоих',
+        'Постельные принадлежности',
+        'Отопление',
+        'Освещение и розетки',
+        'Стол и терраса',
+      ],
+      rules: [
+        'Заезд с 14:00, проживание 22 часа',
+        'Продление до 6 часов — 5 000 ₽',
+        'Максимум 4 гостя',
+        'Фурако и баня бронируются отдельно',
+      ],
     },
   ],
   services: [
@@ -118,19 +143,27 @@ const en: SiteContent = {
   cabins: [
     {
       id: 'cabin-a',
-      name: 'Forest cabin',
-      description: 'A panoramic window facing the woods, double bed, heating.',
-      meta: 'up to 4 guests · 22 hours',
+      name: 'The cabin',
+      description:
+        'A warm cabin with a wide window into the forest: a double bed, a sofa bed, a dining table and a terrace. Linen, towels and lighting are already inside — bring nothing.',
+      meta: 'up to 4 guests · 22 hours · check-in from 2 pm',
       pricePerNight: 15000,
-      priceNote: 'extension up to 6 hours — 5,000 RUB',
-    },
-    {
-      id: 'cabin-b',
-      name: 'Pine cabin',
-      description: 'A compact cabin overlooking the grounds, warm and bright.',
-      meta: 'up to 4 guests · 22 hours',
-      pricePerNight: 15000,
-      priceNote: 'extension up to 6 hours — 5,000 RUB',
+      priceUnit: 'per cabin, 22 hours, up to 4 guests',
+      priceNote: 'Extension up to 6 hours — 5,000 ₽',
+      features: [
+        'Double bed',
+        'Sofa bed for two',
+        'Bed linen and towels',
+        'Heating',
+        'Lighting and power sockets',
+        'Dining table and terrace',
+      ],
+      rules: [
+        'Check-in from 2 pm, 22-hour stay',
+        'Extension up to 6 hours — 5,000 ₽',
+        'Maximum 4 guests',
+        'Furako and banya are booked separately',
+      ],
     },
   ],
   services: [

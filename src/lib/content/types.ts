@@ -11,6 +11,22 @@ export type MediaSource = {
   blurDataURL?: string;
 };
 
+/**
+ * Фоновое видео первого экрана.
+ *
+ * `poster` обязателен и не является украшением: именно он — LCP-элемент.
+ * Видео грузится позже и только при подходящих условиях, поэтому без постера
+ * первый экран был бы пустым ровно столько, сколько идёт загрузка.
+ */
+export type HeroVideo = {
+  /** H.264/MP4 — единственный формат, который играет везде. Обязателен. */
+  mp4: string;
+  /** VP9 или AV1 в WebM. Необязателен, но при том же качестве заметно легче. */
+  webm?: string;
+  /** Первый кадр видео. Показывается всегда, видео проявляется поверх него. */
+  poster: MediaSource;
+};
+
 export type Cabin = {
   id: string;
   name: string;
@@ -18,7 +34,15 @@ export type Cabin = {
   meta: string;
   pricePerNight: number;
   priceNote?: string;
+  /** Что за цену: «за дом, 22 часа, до 4 гостей». */
+  priceUnit?: string;
   image?: MediaSource;
+  /** Галерея. Первый кадр — главный; полоса миниатюр появляется от двух фото. */
+  gallery?: MediaSource[];
+  /** Что есть внутри — список с маркерами в две колонки. */
+  features?: string[];
+  /** Условия проживания. Показываются в модалке «Подробнее». */
+  rules?: string[];
 };
 
 export type ServiceKey = 'furako' | 'banya' | 'common_house';
@@ -65,7 +89,7 @@ export type SiteSettings = {
 
 export type SiteContent = {
   brand: { wordmark: string; legalName: string };
-  hero: { title: string; subtitle: string; image?: MediaSource };
+  hero: { title: string; subtitle: string; image?: MediaSource; video?: HeroVideo };
   about: { title: string; body: string[]; image?: MediaSource };
   cabins: Cabin[];
   services: Service[];
