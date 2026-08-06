@@ -6,6 +6,13 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { MediaSource } from '@/lib/content/types';
 import { cn } from '@/lib/utils/cn';
 
+/**
+ * Сколько кадров показывать в дорожке, пока фотографий нет.
+ * Совпадает с тем, сколько их просят у заказчицы в content/TODO-CONTENT.md,
+ * поэтому после загрузки настоящих снимков блок не изменится в размерах.
+ */
+const PLACEHOLDER_SLIDES = 5;
+
 type Labels = {
   /** Подпись заглушки, пока фотографий нет. */
   placeholder: string;
@@ -29,13 +36,19 @@ export function CabinGallery({
   labels: Labels;
 }) {
   const [index, setIndex] = useState(0);
-  const stripRef = useRef<HTMLDivElement>(null);
   const thumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Пока снимков нет, дорожка живёт на пустых слотах: механика листания
+  // видна и проверяема до того, как заказчица пришлёт фотографии.
+  // Как только gallery заполнится, слоты заменятся кадрами без правок вёрстки.
+  const slides: (MediaSource | null)[] =
+    images.length > 0 ? images : Array.from({ length: PLACEHOLDER_SLIDES }, () => null);
+
+  const total = slides.length;
 
   const select = useCallback(
     (next: number) => {
-      if (images.length === 0) return;
-      const clamped = (next + images.length) % images.length;
+      const clamped = (next + total) % total;
       setIndex(clamped);
       thumbRefs.current[clamped]?.scrollIntoView({
         behavior: 'smooth',
@@ -43,125 +56,124 @@ export function CabinGallery({
         inline: 'center',
       });
     },
-    [images.length],
+    [total],
   );
 
-  // Фотографий пока нет — оставляем ту же штриховку, что и в остальных блоках.
-  // Полоса миниатюр в этом состоянии не рисуется: пустые рамки изображали бы
-  // интерфейс, которого нет.
-  if (images.length === 0) {
-    return (
-      <div
-        role="img"
-        aria-label={alt + '. ' + labels.placeholder}
-        className="bg-surface relative aspect-4/3 overflow-hidden rounded-lg"
-      >
-        <div aria-hidden="true" className="hatch absolute inset-0 opacity-40" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-label text-text-muted uppercase">{labels.placeholder}</span>
-        </div>
-      </div>
-    );
-  }
+  const current = slides[index];
 
-  const current = images[index];
-  const hasStrip = images.length > 1;
+  const label = (position: number) =>
+    labels.thumbTemplate.replace('{n}', String(position + 1)).replace('{total}', String(total));
 
   return (
     <div>
-      <div className="bg-surface relative aspect-4/3 overflow-hidden rounded-lg">
-        {/*
-          key на индексе перемонтирует картинку, и она проявляется анимацией.
-          В референсе то же самое сделано таймером на 200 мс — здесь это лишнее:
-          CSS справляется сам и не оставляет висящих таймеров при размонтировании.
-        */}
-        <Image
-          key={index}
-          src={current.src}
-          alt={current.alt ?? alt}
-          fill
-          sizes="(min-width: 1024px) 55vw, 100vw"
-          priority={index === 0}
-          placeholder={current.blurDataURL ? 'blur' : 'empty'}
-          blurDataURL={current.blurDataURL}
-          className="animate-fade-in object-cover"
-        />
+      <div
+        className="bg-surface relative aspect-4/3 overflow-hidden rounded-lg"
+        {...(current ? {} : { role: 'img', 'aria-label': alt + '. ' + labels.placeholder })}
+      >
+        {current ? (
+          // key на индексе перемонтирует картинку, и она проявляется анимацией.
+          // В референсе то же самое сделано таймером на 200 мс — здесь это лишнее:
+          // CSS справляется сам и не оставляет висящих таймеров при размонтировании.
+          <Image
+            key={index}
+            src={current.src}
+            alt={current.alt ?? alt}
+            fill
+            sizes="(min-width: 1024px) 55vw, 100vw"
+            priority={index === 0}
+            placeholder={current.blurDataURL ? 'blur' : 'empty'}
+            blurDataURL={current.blurDataURL}
+            className="animate-fade-in object-cover"
+          />
+        ) : (
+          <>
+            <div aria-hidden="true" className="hatch absolute inset-0 opacity-40" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+              <span className="text-label text-text-muted uppercase">{labels.placeholder}</span>
+              <span aria-hidden="true" className="text-small text-text-muted tabular">
+                {index + 1} / {total}
+              </span>
+            </div>
+          </>
+        )}
       </div>
 
-      {hasStrip ? (
-        <div className="relative mt-3.5">
-          <StripButton
-            side="prev"
-            label={labels.prev}
-            disabled={index === 0}
-            onClick={() => select(index - 1)}
-          />
+      <div className="relative mt-3.5">
+        <StripButton
+          side="prev"
+          label={labels.prev}
+          disabled={index === 0}
+          onClick={() => select(index - 1)}
+        />
 
-          <div
-            ref={stripRef}
-            role="tablist"
-            aria-label={alt}
-            onKeyDown={(event) => {
-              if (event.key === 'ArrowRight') {
-                event.preventDefault();
-                select(index + 1);
-                thumbRefs.current[(index + 1) % images.length]?.focus();
-              }
-              if (event.key === 'ArrowLeft') {
-                event.preventDefault();
-                select(index - 1);
-                thumbRefs.current[(index - 1 + images.length) % images.length]?.focus();
-              }
-            }}
-            // scrollbar-width:none повторяет референс: полоса прокручивается
-            // жестом и стрелками, но системный скроллбар под миниатюрами
-            // ломал бы ритм блока.
-            className="flex items-center gap-2.5 overflow-x-auto px-11 py-2.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {images.map((image, position) => {
-              const active = position === index;
-              return (
-                <button
-                  key={image.src}
-                  ref={(node) => {
-                    thumbRefs.current[position] = node;
-                  }}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  tabIndex={active ? 0 : -1}
-                  aria-label={labels.thumbTemplate
-                    .replace('{n}', String(position + 1))
-                    .replace('{total}', String(images.length))}
-                  onClick={() => select(position)}
-                  className={cn(
-                    'bg-surface relative shrink-0 overflow-hidden rounded-sm transition-all duration-300',
-                    active
-                      ? 'h-[99px] w-[132px] opacity-100'
-                      : 'h-[78px] w-[104px] opacity-50 hover:opacity-80',
-                  )}
-                >
+        <div
+          role="tablist"
+          aria-label={alt}
+          onKeyDown={(event) => {
+            if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+            event.preventDefault();
+            const next = index + (event.key === 'ArrowRight' ? 1 : -1);
+            select(next);
+            thumbRefs.current[(next + total) % total]?.focus();
+          }}
+          // scrollbar-width:none повторяет референс: дорожка листается жестом,
+          // стрелками и клавишами, но системный скроллбар под миниатюрами
+          // ломал бы ритм блока.
+          className="flex items-center gap-2.5 overflow-x-auto px-11 py-2.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {slides.map((slide, position) => {
+            const active = position === index;
+            return (
+              <button
+                key={slide ? slide.src : 'slot-' + position}
+                ref={(node) => {
+                  thumbRefs.current[position] = node;
+                }}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                tabIndex={active ? 0 : -1}
+                aria-label={label(position)}
+                onClick={() => select(position)}
+                className={cn(
+                  'bg-surface relative shrink-0 overflow-hidden rounded-sm transition-all duration-300',
+                  active
+                    ? 'h-[99px] w-[132px] opacity-100'
+                    : 'h-[78px] w-[104px] opacity-50 hover:opacity-80',
+                )}
+              >
+                {slide ? (
                   <Image
-                    src={image.src}
+                    src={slide.src}
                     alt=""
                     fill
                     sizes="132px"
                     className="object-cover"
                     aria-hidden="true"
                   />
-                </button>
-              );
-            })}
-          </div>
-
-          <StripButton
-            side="next"
-            label={labels.next}
-            disabled={index === images.length - 1}
-            onClick={() => select(index + 1)}
-          />
+                ) : (
+                  <>
+                    <span aria-hidden="true" className="hatch absolute inset-0 opacity-40" />
+                    <span
+                      aria-hidden="true"
+                      className="text-small text-text-muted tabular absolute inset-0 grid place-items-center"
+                    >
+                      {position + 1}
+                    </span>
+                  </>
+                )}
+              </button>
+            );
+          })}
         </div>
-      ) : null}
+
+        <StripButton
+          side="next"
+          label={labels.next}
+          disabled={index === total - 1}
+          onClick={() => select(index + 1)}
+        />
+      </div>
     </div>
   );
 }
