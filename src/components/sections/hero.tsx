@@ -33,13 +33,12 @@ export function Hero({ content, messages }: { content: SiteContent; messages: Me
           />
           {video ? <HeroVideo video={video} /> : null}
           {/*
-            Скрим, а не просто затемнение: текст стоит в нижней трети, поэтому
-            градиент гуще снизу. Без него контраст заголовка зависел бы от того,
-            какой кадр загрузит заказчица.
+            Общий скрим остаётся, хотя текст защищён собственной подложкой:
+            он нужен шапке сайта, которая стоит поверх того же кадра.
           */}
           <div
             aria-hidden="true"
-            className="absolute inset-0 -z-10 bg-gradient-to-t from-[rgb(20_17_13/0.82)] via-[rgb(20_17_13/0.45)] to-[rgb(20_17_13/0.15)]"
+            className="absolute inset-0 -z-10 bg-gradient-to-t from-[rgb(20_17_13/0.72)] via-[rgb(20_17_13/0.35)] to-[rgb(20_17_13/0.15)]"
           />
         </>
       ) : (
@@ -47,37 +46,43 @@ export function Hero({ content, messages }: { content: SiteContent; messages: Me
       )}
 
       <div className="max-w-main gutter relative mx-auto flex min-h-[82svh] flex-col justify-end pt-32 pb-16 md:min-h-[92svh]">
-        <p
-          className={cn(
-            'text-label uppercase',
-            hasBackdrop ? 'text-text-inverse opacity-90' : 'text-text-muted',
-          )}
+        {/*
+          Подложка появляется только там, где под текстом что-то движется.
+          На светлом фоне без видео она была бы тёмным пятном без причины.
+        */}
+        <div
+          className={cn('max-w-3xl', hasBackdrop && 'hero-panel rounded-lg p-7 sm:p-10 lg:p-12')}
         >
-          {messages.hero.eyebrow}
-        </p>
-        <h1
-          className={cn(
-            'text-display mt-6 max-w-4xl',
-            hasBackdrop ? 'text-white' : 'text-text-primary',
-          )}
-        >
-          {content.hero.title}
-        </h1>
-        <p
-          className={cn(
-            'text-lead mt-5 max-w-xl',
-            hasBackdrop ? 'text-text-inverse opacity-90' : 'text-text-secondary',
-          )}
-        >
-          {content.hero.subtitle}
-        </p>
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-          <BookingButton size="lg" placement="hero">
-            {messages.actions.book}
-          </BookingButton>
-          <Button asChild variant={hasBackdrop ? 'ghost-inverse' : 'ghost'} size="lg">
-            <a href="#cabins">{messages.actions.viewCabins}</a>
-          </Button>
+          <p
+            className={cn(
+              'text-label uppercase',
+              hasBackdrop ? 'text-text-inverse' : 'text-text-muted',
+            )}
+          >
+            {messages.hero.eyebrow}
+          </p>
+
+          <h1 className={cn('text-display mt-6', hasBackdrop ? 'text-white' : 'text-text-primary')}>
+            {content.hero.title}
+          </h1>
+
+          <p
+            className={cn(
+              'text-hero-lead mt-5 max-w-xl font-light',
+              hasBackdrop ? 'text-text-inverse' : 'text-text-secondary',
+            )}
+          >
+            {content.hero.subtitle}
+          </p>
+
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <BookingButton size="lg" placement="hero">
+              {messages.actions.book}
+            </BookingButton>
+            <Button asChild variant={hasBackdrop ? 'ghost-inverse' : 'ghost'} size="lg">
+              <a href="#cabins">{messages.actions.viewCabins}</a>
+            </Button>
+          </div>
         </div>
       </div>
     </section>
