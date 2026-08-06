@@ -2,7 +2,8 @@ import type { Locale } from '@/i18n/config';
 import type { SiteContent, SiteSettings } from './types';
 
 /* ---------------------------------------------------------------------------
-   Единственный источник правды по контенту.
+   Seed / fallback-контент. Источник правды в рантайме — Directus
+   (см. getSiteContent и scripts/seed-directus.mjs).
 
    Что здесь ещё ждёт заказчицу (см. content/TODO-CONTENT.md):
      • coordinates      — точка базы, без неё карта ведёт на поиск по адресу

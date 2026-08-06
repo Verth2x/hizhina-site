@@ -1,27 +1,31 @@
 import type { NextConfig } from 'next';
 
-const isProd = process.env.VERCEL_ENV === 'production';
+/** HSTS и upgrade-insecure-requests — только когда явно прод (VDS). */
+const isProd = process.env.APP_ENV === 'production';
 
 /**
- * Домен, откуда приходят фотографии, если их решат хранить не в репозитории
- * (например, в облаке хостера). Пустая переменная — значит картинки лежат
- * локально в /public и разрешать ничего не нужно.
+ * Домен, откуда приходят фотографии (Directus assets).
+ * Пустая переменная — картинки только локальные в /public.
  */
 const imageHost = process.env.NEXT_PUBLIC_IMAGE_HOST?.trim();
+
+function imageHostPatterns(): { protocol: 'http' | 'https'; hostname: string; port?: string }[] {
+  if (!imageHost) return [];
+  const [hostname, port] = imageHost.split(':');
+  const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+  const pattern: { protocol: 'http' | 'https'; hostname: string; port?: string } = {
+    protocol: isLocal ? 'http' : 'https',
+    hostname,
+  };
+  if (port) pattern.port = port;
+  return [pattern];
+}
 
 /**
  * Content-Security-Policy.
  *
- * Честная оговорка: `'unsafe-inline'` в script-src оставлен сознательно.
- * Строгий CSP на nonce требует, чтобы каждый ответ формировался на лету,
- * а сайт статический — весь смысл в том, чтобы отдавать готовый HTML с CDN.
- * Заменив это на nonce, мы вернули бы вызов посредника на каждый запрос —
- * ровно тот, от которого избавились ниже.
- *
- * Что политика всё равно даёт: запрещает подгрузку скриптов и фреймов
- * с посторонних доменов, запрещает встраивание сайта в чужой iframe и
- * ограничивает, куда браузер вправе отправлять данные. Инлайновые скрипты
- * на странице — только наши: JSON-LD и бутстрап Next.
+ * `'unsafe-inline'` в script-src оставлен сознательно: строгий CSP на nonce
+ * требует ответ на лету, а страницы отдаются из кеша / SSG.
  */
 const csp = [
   "default-src 'self'",
@@ -29,15 +33,16 @@ const csp = [
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  // mc.yandex.ru — счётчик Метрики, включая вебвизор.
   "script-src 'self' 'unsafe-inline' https://mc.yandex.ru https://yastatic.net https://va.vercel-scripts.com",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://mc.yandex.ru" + (imageHost ? ' https://' + imageHost : ''),
+  "img-src 'self' data: blob: https://mc.yandex.ru" +
+    (imageHost ? ` http://${imageHost} https://${imageHost}` : ''),
+  "media-src 'self' blob:" + (imageHost ? ` http://${imageHost} https://${imageHost}` : ''),
   "font-src 'self' data:",
   "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com https://va.vercel-scripts.com",
   'frame-src https://mc.yandex.ru',
   "manifest-src 'self'",
-  'upgrade-insecure-requests',
+  ...(isProd ? ['upgrade-insecure-requests'] : []),
 ].join('; ');
 
 const securityHeaders = [
@@ -45,8 +50,6 @@ const securityHeaders = [
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'X-Frame-Options', value: 'DENY' },
   {
-    // Сайту не нужны ни камера, ни микрофон, ни геолокация: маршрут строит
-    // Яндекс.Карты у себя. Явный отказ снимает вопросы у сканеров.
     key: 'Permissions-Policy',
     value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
   },
@@ -54,8 +57,6 @@ const securityHeaders = [
 ];
 
 if (isProd) {
-  // HSTS включаем только на проде: на localhost он заставил бы браузер
-  // навсегда запомнить https для 127.0.0.1 и сломал бы разработку.
   securityHeaders.push({
     key: 'Strict-Transport-Security',
     value: 'max-age=63072000; includeSubDomains; preload',
@@ -63,23 +64,14 @@ if (isProd) {
 }
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   poweredByHeader: false,
 
   images: {
     formats: ['image/avif', 'image/webp'],
-    ...(imageHost ? { remotePatterns: [{ protocol: 'https' as const, hostname: imageHost }] } : {}),
+    remotePatterns: imageHostPatterns(),
   },
 
-  /**
-   * Раньше корень уводил на локаль через middleware. Сайт статический:
-   * тратить вызов функции на каждый запрос к `/` не за что. Редирект
-   * в конфиге разрешается на уровне маршрутизации, до файловой системы,
-   * и не стоит ничего.
-   *
-   * `permanent: false` (307), а не 308: постоянный редирект браузеры кэшируют
-   * бессрочно, и если однажды появится выбор локали по языку браузера,
-   * старые клиенты продолжат уходить на /ru.
-   */
   async redirects() {
     return [
       { source: '/', destination: '/ru', permanent: false },

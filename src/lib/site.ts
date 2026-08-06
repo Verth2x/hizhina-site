@@ -7,18 +7,17 @@
 const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
 
 /**
- * `VERCEL_ENV` = production только на продовом деплое; на preview-ветках
- * и локально он другой. Это же значение управляет robots.txt.
+ * Production = `APP_ENV=production` (Docker / VDS).
+ * Не `NODE_ENV`: `next build` всегда ставит production, и локальная
+ * сборка без canonical тогда бы падала. Раньше опирались на `VERCEL_ENV`.
  */
-export const isProduction = process.env.VERCEL_ENV === 'production';
+export const isProduction = process.env.APP_ENV === 'production';
 
 if (isProduction && !rawSiteUrl) {
-  // Падаем на билде, а не молча уезжаем на localhost: без домена
-  // canonical, sitemap.xml и OG-теги указывают в пустоту.
   throw new Error(
     'NEXT_PUBLIC_SITE_URL не задан на продовом окружении. ' +
       'Без него canonical, sitemap и OG-теги укажут на localhost. ' +
-      'Задайте переменную в настройках проекта — см. .env.example.',
+      'Задайте переменную — см. .env.example.',
   );
 }
 

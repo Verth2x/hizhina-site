@@ -11,7 +11,12 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\" \"*.{ts,mjs,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\" \"*.{ts,mjs,json,md}\"",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "bootstrap:directus": "node --env-file=.env scripts/bootstrap-directus.mjs",
+    "seed": "node --env-file=.env scripts/seed-directus.mjs",
+    "compose:up": "docker compose up -d db directus",
+    "compose:web": "docker compose up -d --build web",
+    "compose:proxy": "docker compose --profile proxy up -d --build"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",
