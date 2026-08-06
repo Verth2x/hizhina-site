@@ -1,0 +1,73 @@
+{
+  "nav": {
+    "cabins": "Cabins",
+    "furako": "Furako",
+    "banya": "Banya",
+    "commonHouse": "Common house",
+    "about": "About",
+    "contacts": "Contacts"
+  },
+  "actions": {
+    "book": "Request booking",
+    "check": "Check availability",
+    "details": "Details",
+    "viewCabins": "View cabins",
+    "close": "Close",
+    "showMap": "Show on map",
+    "buildRoute": "Get directions",
+    "retry": "Try again",
+    "backHome": "Back to home"
+  },
+  "popup": {
+    "title": "How to book",
+    "description": "Message us any way you like — we will confirm availability.",
+    "telegram": "Telegram bot",
+    "telegramHint": "Requests and answers to common questions",
+    "whatsapp": "WhatsApp",
+    "phone": "Call us",
+    "vk": "VK",
+    "context": "Interested in"
+  },
+  "sections": {
+    "aboutLabel": "About",
+    "cabinsTitle": "Cabins",
+    "cabinsLead": "Two types of stay — for a couple or a group of up to four.",
+    "extrasTitle": "Extras",
+    "extrasLead": "Available on site.",
+    "contactsLabel": "Get in touch",
+    "contactsTitle": "Contacts",
+    "directionsTitle": "Getting here",
+    "notBookableSeparately": "Available only with a cabin booking. We agree on the ready time individually."
+  },
+  "footer": {
+    "privacy": "Privacy policy",
+    "rights": "All rights reserved",
+    "inn": "Tax ID (INN)",
+    "ogrnip": "Registration no. (OGRNIP)"
+  },
+  "common": {
+    "perNight": "night",
+    "photoSoon": "Photo coming soon",
+    "skipToContent": "Skip to content",
+    "langSwitch": "Interface language",
+    "menu": "Menu",
+    "mainNav": "Main navigation",
+    "toHome": "Go to the home page",
+    "loading": "Loading…",
+    "address": "Address",
+    "email": "Email"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "This page does not seem to exist. The link may be outdated or the address mistyped.",
+    "home": "Go home"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "body": "The page failed to load. Please refresh — if that does not help, message us and we will take your request by hand.",
+    "digest": "Error code"
+  },
+  "hero": {
+    "eyebrow": "Sakhalin · retreat"
+  }
+}

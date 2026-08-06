@@ -1,0 +1,77 @@
+@import 'tailwindcss';
+@import './theme.css';
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5.5rem;
+  }
+
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 300;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Ember на угле даёт 2.89:1 при норме 3:1 (WCAG 1.4.11): на тёмных секциях
+     главный CTA при навигации с клавиатуры практически не подсвечивался.
+     Переопределяем кольцо внутри инверсных поверхностей. */
+  .bg-surface-inverse :focus-visible,
+  .bg-surface-deep :focus-visible,
+  .bg-surface-inverse-raised :focus-visible {
+    outline-color: var(--color-focus-inverse);
+  }
+
+  ::selection {
+    background-color: var(--color-action-soft);
+    color: var(--color-action-ink);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Мобильный CTA-бар прибит к низу экрана и перекрывает последние строки
+     футера. Класс вешается на <body> из клиентского компонента, когда бар
+     виден, — так контент не уезжает под него на маленьких экранах. */
+  .has-mobile-cta {
+    padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));
+  }
+
+  @media (width >= 768px) {
+    .has-mobile-cta {
+      padding-bottom: 0;
+    }
+  }
+}

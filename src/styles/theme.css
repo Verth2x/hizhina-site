@@ -1,0 +1,256 @@
+/* ---------------------------------------------------------------------------
+   Палитра «Хижина».
+
+   Значения контраста в комментариях посчитаны по WCAG 2.1 против трёх фонов,
+   которые реально встречаются на странице:
+     fog   #f7f5f0  — основной фон
+     linen #efe9de  — «утопленные» секции и карточки-заглушки
+     white #ffffff  — карточки
+
+   Нормы, которыми пользуемся:
+     4.5:1 — текст мельче 24px / 19px bold                       (1.4.3)
+     3:1   — крупный текст, границы и иконки органов управления  (1.4.11)
+--------------------------------------------------------------------------- */
+:root {
+  --p-fog: #f7f5f0;
+  --p-linen: #efe9de;
+  --p-coal: #2e2a24;
+  --p-coal-mid: #1e1b17;
+  --p-coal-deep: #14120f;
+  --p-bark: #6b6255;
+
+  /* Было #8a8175 — fog 3.52 / linen 3.17 / white 3.83, все три FAIL.
+     Предложенный в чек-апе #71695f даёт на linen 4.47 — недобор 0.03 до нормы,
+     а linen это фон «утопленных» секций, где muted как раз и живёт.
+     Сейчас #70685e: fog 5.03 / linen 4.54 / white 5.48 — проходит везде. */
+  --p-bark-soft: #70685e;
+
+  --p-ember: #a65e2e;
+  --p-ember-hover: #8f4e24;
+  --p-ember-soft: #f0e0d4;
+
+  /* Кольцо фокуса для тёмных секций: на coal 4.22, на coal-deep 5.54. */
+  --p-ember-light: #c47a45;
+
+  --p-pine: #3e4e3a;
+  --p-pine-50: #e8ece5;
+  --p-light: #ede7db;
+  --p-white: #ffffff;
+
+  /* Декоративные рамки: карточки, разделители. 3:1 им не нужен,
+     затемнение сделало бы вёрстку грубее. */
+  --p-line: #dcd5c9;
+
+  /* Границы интерактивных элементов: для ghost-кнопки рамка — единственный
+     визуальный признак органа управления, поэтому нужен 1.4.11 → 3:1.
+     Считать нужно против linen (#efe9de) — это самый тёмный из трёх фонов
+     и именно на нём стоит вторичный CTA в hero.
+
+     interactive:    fog 3.44 / linen 3.10 / white 3.75 — проходит впритык
+     strong (hover): fog 3.90 / linen 3.51 / white 4.25
+
+     Предложенный в чек-апе #928b80 для hover давал на linen 2.79 — то есть
+     наведение УМЕНЬШАЛО контраст рамки относительно покоя. Ховер обязан
+     усиливать, поэтому hover-токен темнее базового, а не светлее. */
+  --p-line-interactive: #8a8378;
+  --p-line-strong: #817a6f;
+
+  /* Затемнение под модалками. Раньше жило внутри modal.tsx произвольным
+     значением Tailwind — токен нужен, чтобы попап и мобильное меню совпадали. */
+  --p-overlay: rgb(20 17 13 / 0.55);
+}
+
+@theme {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-white: var(--p-white);
+
+  --color-surface: var(--p-fog);
+  --color-surface-raised: var(--p-white);
+  --color-surface-sunk: var(--p-linen);
+  --color-surface-soft: var(--p-linen);
+  --color-surface-inverse: var(--p-coal);
+  --color-surface-inverse-raised: var(--p-coal-mid);
+  --color-surface-deep: var(--p-coal-deep);
+
+  --color-text-primary: var(--p-coal);
+  --color-text-secondary: var(--p-bark);
+  --color-text-muted: var(--p-bark-soft);
+  --color-text-inverse: var(--p-light);
+
+  --color-action: var(--p-ember);
+  --color-action-hover: var(--p-ember-hover);
+  --color-action-soft: var(--p-ember-soft);
+  --color-action-ink: var(--p-ember-hover);
+  --color-accent: var(--p-pine);
+  --color-accent-soft: var(--p-pine-50);
+
+  --color-border: var(--p-line);
+  --color-border-interactive: var(--p-line-interactive);
+  --color-border-strong: var(--p-line-strong);
+
+  /* 22% → 1.89:1 на coal. Годится для разделителей <dl>, но не для границы
+     круглой соц-кнопки — она интерактивная. 45% → 3.58:1, проходит. */
+  --color-border-inverse: color-mix(in srgb, var(--p-light) 22%, transparent);
+  --color-border-inverse-interactive: color-mix(in srgb, var(--p-light) 45%, transparent);
+
+  --color-overlay: var(--p-overlay);
+  --color-inverse-hover: color-mix(in srgb, var(--p-light) 8%, transparent);
+
+  --color-focus: var(--p-ember);
+  --color-focus-inverse: var(--p-ember-light);
+
+  --font-display: var(--font-display-loaded, Verdana), Verdana, system-ui, sans-serif;
+  --font-sans: var(--font-sans-loaded, system-ui), system-ui, sans-serif;
+
+  --text-display: clamp(3rem, 9vw, 6.5rem);
+  --text-display--line-height: 1;
+  --text-display--letter-spacing: 0.02em;
+  --text-display--font-weight: 300;
+  --text-h1: clamp(2rem, 4.5vw, 3.25rem);
+  --text-h1--line-height: 1.1;
+  --text-h1--letter-spacing: 0.01em;
+  --text-h1--font-weight: 300;
+  --text-h2: clamp(1.75rem, 4vw, 3rem);
+  --text-h2--line-height: 1.18;
+  --text-h2--letter-spacing: 0.01em;
+  --text-h2--font-weight: 300;
+  --text-h3: clamp(1.35rem, 2.2vw, 1.75rem);
+  --text-h3--line-height: 1.2;
+  --text-h3--font-weight: 400;
+  --text-lead: clamp(1.05rem, 1.6vw, 1.25rem);
+  --text-lead--line-height: 1.6;
+  --text-body: 1rem;
+  --text-body--line-height: 1.7;
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.6;
+  --text-price: clamp(1.75rem, 3vw, 2.375rem);
+  --text-price--line-height: 1;
+  --text-price--font-weight: 400;
+
+  /* Надкатегория секции — декоративный маркер, читается как орнамент. */
+  --text-label: 0.75rem;
+  --text-label--line-height: 1.4;
+  --text-label--letter-spacing: 0.28em;
+  --text-label--font-weight: 400;
+
+  /* Лейбл, который нужно прочитать (термины <dt> в контактах): 13px и вдвое
+     меньший трекинг — прописная кириллица на разрядке 0.28em теряет слово. */
+  --text-meta: 0.8125rem;
+  --text-meta--line-height: 1.5;
+  --text-meta--letter-spacing: 0.18em;
+  --text-meta--font-weight: 500;
+
+  --spacing: 0.25rem;
+  --container-prose: 68ch;
+  --container-main: 77.5rem;
+
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+
+  --shadow-pop: 0 2px 10px rgb(46 42 36 / 0.07);
+  --shadow-modal: 0 20px 60px rgb(20 17 13 / 0.28);
+  --shadow-bar: 0 -2px 18px rgb(46 42 36 / 0.1);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+
+  --animate-fade-in: fade-in 250ms var(--ease-out-soft);
+  --animate-fade-out: fade-out 150ms var(--ease-in-out-soft);
+  --animate-slide-up: slide-up 400ms var(--ease-out-soft);
+  --animate-slide-in: slide-in 300ms var(--ease-out-soft);
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes slide-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  @keyframes slide-in {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+}
+
+@utility z-sticky {
+  z-index: 100;
+}
+@utility z-bar {
+  z-index: 200;
+}
+@utility z-overlay {
+  z-index: 300;
+}
+@utility z-modal {
+  z-index: 400;
+}
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility section-y {
+  padding-block: 4rem;
+  @media (width >= 768px) {
+    padding-block: 6rem;
+  }
+  @media (width >= 1024px) {
+    padding-block: 8rem;
+  }
+}
+
+@utility section-y-tight {
+  padding-block: 3rem;
+  @media (width >= 768px) {
+    padding-block: 4rem;
+  }
+}
+
+@utility gutter {
+  padding-inline: 1.25rem;
+  @media (width >= 768px) {
+    padding-inline: 2rem;
+  }
+  @media (width >= 1024px) {
+    padding-inline: 3rem;
+  }
+}
+
+@utility hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 14px,
+    var(--color-border) 14px,
+    var(--color-border) 15px
+  );
+}
