@@ -54,7 +54,7 @@ export function Header({
         <Link
           href={'/' + locale}
           aria-label={messages.common.toHome}
-          className="font-display text-h3 text-text-primary"
+          className="font-brand text-h3 text-text-primary"
         >
           {wordmark}
         </Link>

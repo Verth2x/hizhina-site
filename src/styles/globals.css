@@ -122,3 +122,96 @@
     backdrop-filter: none;
   }
 }
+
+/**
+ * Первый экран: подложка вместо панели.
+ *
+ * Панель с рамкой резала кадр прямоугольником. Вместо неё — два слоя:
+ * .hero-scrim даёт плотность слева и растворяется вправо,
+ * .hero-scrim-blur размывает кадр под текстом и гаснет маской раньше,
+ * чем градиент, — так граница читается как дымка, а не как край.
+ *
+ * Контраст на левой трети: белый заголовок от 11:1, светлый текст от 8:1
+ * даже на самом ярком кадре видео.
+ */
+.hero-scrim {
+  background: linear-gradient(
+    to right,
+    rgb(20 17 13 / 0.9) 0%,
+    rgb(20 17 13 / 0.79) 22%,
+    rgb(20 17 13 / 0.54) 44%,
+    rgb(20 17 13 / 0.24) 66%,
+    rgb(20 17 13 / 0.07) 85%,
+    transparent 100%
+  );
+}
+
+.hero-scrim-blur {
+  -webkit-backdrop-filter: blur(14px) saturate(1.06);
+  backdrop-filter: blur(14px) saturate(1.06);
+  -webkit-mask-image: linear-gradient(
+    to right,
+    black 0%,
+    black 28%,
+    rgb(0 0 0 / 0.4) 52%,
+    transparent 78%
+  );
+  mask-image: linear-gradient(
+    to right,
+    black 0%,
+    black 28%,
+    rgb(0 0 0 / 0.4) 52%,
+    transparent 78%
+  );
+}
+
+/* Без backdrop-filter контраст вытягивает только плотность. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .hero-scrim {
+    background: linear-gradient(
+      to right,
+      rgb(20 17 13 / 0.95) 0%,
+      rgb(20 17 13 / 0.88) 26%,
+      rgb(20 17 13 / 0.62) 48%,
+      rgb(20 17 13 / 0.28) 70%,
+      transparent 100%
+    );
+  }
+}
+
+/* На узком экране горизонтальный градиент бессмысленен — текст занимает
+   всю ширину. Разворачиваем снизу вверх. */
+@media (width < 768px) {
+  .hero-scrim {
+    background: linear-gradient(
+      to top,
+      rgb(20 17 13 / 0.93) 0%,
+      rgb(20 17 13 / 0.76) 42%,
+      rgb(20 17 13 / 0.44) 72%,
+      rgb(20 17 13 / 0.28) 100%
+    );
+  }
+  .hero-scrim-blur {
+    -webkit-mask-image: linear-gradient(to top, black 0%, black 52%, transparent 90%);
+    mask-image: linear-gradient(to top, black 0%, black 52%, transparent 90%);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .hero-scrim {
+    background: linear-gradient(
+      to right,
+      rgb(20 17 13 / 0.96) 0%,
+      rgb(20 17 13 / 0.9) 40%,
+      rgb(20 17 13 / 0.66) 70%,
+      rgb(20 17 13 / 0.3) 100%
+    );
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .hero-scrim-blur {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

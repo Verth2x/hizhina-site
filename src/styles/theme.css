@@ -101,7 +101,8 @@
   --color-focus: var(--p-ember);
   --color-focus-inverse: var(--p-ember-light);
 
-  --font-display: var(--font-display-loaded, Verdana), Verdana, system-ui, sans-serif;
+  --font-brand: var(--font-display-loaded, Verdana), Verdana, system-ui, sans-serif;
+  --font-display: var(--font-sans-loaded, system-ui), system-ui, sans-serif;
   --font-sans: var(--font-sans-loaded, system-ui), system-ui, sans-serif;
 
   /* Первый экран — единственное место, где типографика работает как изображение.

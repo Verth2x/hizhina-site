@@ -33,26 +33,27 @@ export function Hero({ content, messages }: { content: SiteContent; messages: Me
           />
           {video ? <HeroVideo video={video} /> : null}
           {/*
-            Общий скрим остаётся, хотя текст защищён собственной подложкой:
-            он нужен шапке сайта, которая стоит поверх того же кадра.
+            Два слоя вместо одной панели. Порядок важен: оба идут после
+            HeroVideo, чтобы лечь поверх кадра, но остаться под контентом.
           */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 -z-10 bg-gradient-to-t from-[rgb(20_17_13/0.72)] via-[rgb(20_17_13/0.35)] to-[rgb(20_17_13/0.15)]"
-          />
+          <div aria-hidden="true" className="hero-scrim-blur absolute inset-0 -z-10" />
+          <div aria-hidden="true" className="hero-scrim absolute inset-0 -z-10" />
         </>
       ) : (
         <div aria-hidden="true" className="hatch absolute inset-0 opacity-30" />
       )}
 
-      <div className="max-w-main gutter relative mx-auto flex min-h-[82svh] flex-col justify-end pt-32 pb-16 md:min-h-[92svh]">
-        {/*
-          Подложка появляется только там, где под текстом что-то движется.
-          На светлом фоне без видео она была бы тёмным пятном без причины.
-        */}
-        <div
-          className={cn('max-w-3xl', hasBackdrop && 'hero-panel rounded-lg p-7 sm:p-10 lg:p-12')}
-        >
+      <div className="gutter relative flex min-h-[82svh] w-full flex-col justify-center pt-28 pb-20 md:min-h-[92svh]">
+        <div className="max-w-2xl lg:max-w-3xl">
+          {/* Тонкая черта над надзаголовком — единственная линия на экране,
+              она задаёт левый край всей колонки. */}
+          {hasBackdrop ? (
+            <span
+              aria-hidden="true"
+              className="bg-action mb-7 block h-px w-16 origin-left opacity-80"
+            />
+          ) : null}
+
           <p
             className={cn(
               'text-label uppercase',
@@ -62,20 +63,29 @@ export function Hero({ content, messages }: { content: SiteContent; messages: Me
             {messages.hero.eyebrow}
           </p>
 
-          <h1 className={cn('text-display mt-6', hasBackdrop ? 'text-white' : 'text-text-primary')}>
+          <h1
+            className={cn(
+              'text-display mt-6',
+              hasBackdrop
+                ? 'text-white [text-shadow:0_2px_40px_rgb(20_17_13/0.55)]'
+                : 'text-text-primary',
+            )}
+          >
             {content.hero.title}
           </h1>
 
           <p
             className={cn(
-              'text-hero-lead mt-5 max-w-xl font-light',
-              hasBackdrop ? 'text-text-inverse' : 'text-text-secondary',
+              'text-hero-lead mt-6 max-w-xl font-light',
+              hasBackdrop
+                ? 'text-text-inverse [text-shadow:0_1px_24px_rgb(20_17_13/0.5)]'
+                : 'text-text-secondary',
             )}
           >
             {content.hero.subtitle}
           </p>
 
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-10 flex flex-col gap-3 sm:flex-row">
             <BookingButton size="lg" placement="hero">
               {messages.actions.book}
             </BookingButton>
