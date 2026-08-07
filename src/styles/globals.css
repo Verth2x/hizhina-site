@@ -75,3 +75,50 @@
     }
   }
 }
+
+/**
+ * Шапка поверх hero-кадра.
+ *
+ * Подложка повторяет логику .hero-panel: стекло там, где браузер умеет
+ * backdrop-filter, и плотный фон там, где не умеет или где система просит
+ * меньше прозрачности.
+ *
+ * Токены цвета переопределяются в scope шапки — дочерние компоненты
+ * (LangSwitcher, телефон, бургер) читают те же переменные и перекрашиваются
+ * без правок в их собственном коде.
+ *
+ * Фон намеренно тёмный, а не просто прозрачный: на страницах без hero
+ * (например /privacy) белый текст иначе лёг бы на светлый фон.
+ */
+.header-over-hero {
+  background: rgb(20 17 13 / 0.38);
+  -webkit-backdrop-filter: blur(16px) brightness(0.62) saturate(1.05);
+  backdrop-filter: blur(16px) brightness(0.62) saturate(1.05);
+  border-bottom: 1px solid var(--color-border-inverse);
+
+  --color-text-primary: var(--p-white);
+  --color-text-secondary: var(--p-light);
+  --color-text-muted: color-mix(in srgb, var(--p-light) 72%, transparent);
+  --color-border: var(--color-border-inverse);
+  --color-border-interactive: var(--color-border-inverse-interactive);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .header-over-hero {
+    background: rgb(20 17 13 / 0.82);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .header-over-hero {
+    background: rgb(20 17 13 / 0.74);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .header-over-hero {
+    background: rgb(20 17 13 / 0.9);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

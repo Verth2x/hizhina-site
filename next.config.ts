@@ -12,7 +12,7 @@ const imageHost = process.env.NEXT_PUBLIC_IMAGE_HOST?.trim();
 function imageHostPatterns(): { protocol: 'http' | 'https'; hostname: string; port?: string }[] {
   if (!imageHost) return [];
   const [hostname, port] = imageHost.split(':');
-  const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+  const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || /^[0-9.]+$/.test(hostname);
   const pattern: { protocol: 'http' | 'https'; hostname: string; port?: string } = {
     protocol: isLocal ? 'http' : 'https',
     hostname,

@@ -47,10 +47,10 @@ export function Header({
     <header
       className={cn(
         'z-sticky fixed inset-x-0 top-0 transition-colors duration-200',
-        scrolled ? 'bg-surface shadow-pop' : 'bg-transparent',
+        scrolled ? 'bg-surface shadow-pop' : 'header-over-hero',
       )}
     >
-      <div className="max-w-main gutter mx-auto flex h-18 items-center justify-between">
+      <div className="gutter flex h-18 w-full items-center justify-between gap-6">
         <Link
           href={'/' + locale}
           aria-label={messages.common.toHome}
@@ -59,7 +59,7 @@ export function Header({
           {wordmark}
         </Link>
 
-        <nav aria-label={messages.common.mainNav} className="hidden lg:flex lg:gap-6">
+        <nav aria-label={messages.common.mainNav} className="hidden lg:flex lg:flex-1 lg:justify-center lg:gap-8 xl:gap-10">
           {nav.map((item) => (
             <a
               key={item.href}

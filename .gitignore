@@ -21,3 +21,6 @@ uploads/
 directus/uploads/
 data/postgres/
 data/npm/
+
+# VDS-развёртывание
+docker-compose.override.yml

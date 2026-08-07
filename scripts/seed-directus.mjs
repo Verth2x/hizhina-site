@@ -254,7 +254,7 @@ async function upsertSingleton(api, collection, data) {
   const existing = await api.get(`/items/${collection}`);
   if (existing.ok && existing.body?.data) {
     const id = existing.body.data.id;
-    const res = await api.patch(`/items/${collection}/${id}`, data);
+    const res = await api.patch(id ? `/items/${collection}/${id}` : `/items/${collection}`, data);
     if (!res.ok) throw new Error(`patch ${collection}: ${JSON.stringify(res.body)}`);
     console.log(`  ${collection} — обновлён`);
     return;

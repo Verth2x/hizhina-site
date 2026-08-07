@@ -89,7 +89,7 @@ function assetBaseUrl(): string {
   // Публичный URL ассетов для браузера — через IMAGE_HOST или PUBLIC Directus URL.
   const host = process.env.NEXT_PUBLIC_IMAGE_HOST?.trim();
   if (host) {
-    const protocol = host.startsWith('localhost') || host.startsWith('127.') ? 'http' : 'https';
+    const protocol = host.startsWith('localhost') || host.startsWith('127.') || /^[0-9.]+(:|$)/.test(host) ? 'http' : 'https';
     return `${protocol}://${host}`;
   }
   return (process.env.DIRECTUS_PUBLIC_URL || process.env.DIRECTUS_URL || 'http://localhost:8055').replace(
