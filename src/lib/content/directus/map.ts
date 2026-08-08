@@ -1,4 +1,4 @@
-import type { Locale } from '@/i18n/config';
+import type { Locale } from "@/i18n/config";
 import type {
   Cabin,
   Extra,
@@ -8,7 +8,7 @@ import type {
   ServiceKey,
   SiteContent,
   SiteSettings,
-} from '../types';
+} from "../types";
 
 export type DirectusFile = {
   id: string;
@@ -89,13 +89,20 @@ function assetBaseUrl(): string {
   // Публичный URL ассетов для браузера — через IMAGE_HOST или PUBLIC Directus URL.
   const host = process.env.NEXT_PUBLIC_IMAGE_HOST?.trim();
   if (host) {
-    const protocol = host.startsWith('localhost') || host.startsWith('127.') ? 'http' : 'https';
+    const configuredProtocol = process.env.NEXT_PUBLIC_IMAGE_PROTOCOL?.trim();
+    const protocol =
+      configuredProtocol === "http" || configuredProtocol === "https"
+        ? configuredProtocol
+        : host.startsWith("localhost") || host.startsWith("127.")
+          ? "http"
+          : "https";
     return `${protocol}://${host}`;
   }
-  return (process.env.DIRECTUS_PUBLIC_URL || process.env.DIRECTUS_URL || 'http://localhost:8055').replace(
-    /\/+$/,
-    '',
-  );
+  return (
+    process.env.DIRECTUS_PUBLIC_URL ||
+    process.env.DIRECTUS_URL ||
+    "http://localhost:8055"
+  ).replace(/\/+$/, "");
 }
 
 export function mapMedia(
@@ -103,10 +110,10 @@ export function mapMedia(
   fallbackAlt?: string,
 ): MediaSource | undefined {
   if (!file) return undefined;
-  const id = typeof file === 'string' ? file : file.id;
+  const id = typeof file === "string" ? file : file.id;
   if (!id) return undefined;
   const alt =
-    typeof file === 'string'
+    typeof file === "string"
       ? fallbackAlt
       : file.description || file.title || fallbackAlt || undefined;
   return { src: `${assetBaseUrl()}/assets/${id}`, alt };

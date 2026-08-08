@@ -16,7 +16,7 @@
     "seed": "node --env-file=.env scripts/seed-directus.mjs",
     "compose:up": "docker compose up -d db directus",
     "compose:web": "docker compose up -d --build web",
-    "compose:proxy": "docker compose --profile proxy up -d --build"
+    "compose:proxy": "docker compose up -d --build"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",
