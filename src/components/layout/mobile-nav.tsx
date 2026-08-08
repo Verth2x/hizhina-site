@@ -72,7 +72,7 @@ export function MobileNav({
           className="z-modal bg-surface shadow-modal data-[state=open]:animate-slide-in fixed inset-y-0 right-0 flex w-[min(360px,88vw)] flex-col lg:hidden"
         >
           <div className="gutter flex h-18 shrink-0 items-center justify-between">
-            <Dialog.Title className="font-display text-h3 text-text-primary">
+            <Dialog.Title className="font-brand text-h3 text-text-primary">
               {wordmark}
             </Dialog.Title>
             <Dialog.Close asChild>

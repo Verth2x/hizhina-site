@@ -23,7 +23,7 @@ export function Footer({
       <div className="max-w-main section-y-tight gutter mx-auto">
         <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="font-display text-h3">{brand.wordmark}</p>
+            <p className="font-brand text-h3">{brand.wordmark}</p>
             <p className="text-small mt-2 opacity-75">{settings.address}</p>
           </div>
 
