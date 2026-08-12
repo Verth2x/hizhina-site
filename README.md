@@ -14,18 +14,18 @@
 
 ```bash
 cp .env.example .env
-# Задайте пароли: POSTGRES_PASSWORD, DIRECTUS_SECRET, DIRECTUS_ADMIN_*, REVALIDATE_SECRET
+# .env.example — шаблон VDS (hizhina-sakhalin.ru). Для локалки переопределите:
+#   APP_ENV=  CONTENT_FALLBACK=static
+#   DIRECTUS_URL=http://localhost:8055  DIRECTUS_PUBLIC_URL=http://localhost:8055
+#   NEXT_PUBLIC_SITE_URL=http://localhost:3000  NEXT_PUBLIC_IMAGE_HOST=localhost:8055
+#   NEXT_PUBLIC_IMAGE_PROTOCOL=http  SITE_DOMAIN=_  CMS_DOMAIN=cms.localhost
+# и все CHANGE_ME_* пароли / секреты
 
 pnpm install
 pnpm compose:up                 # db + Directus → http://localhost:8055
 pnpm bootstrap:directus         # схема, роль Website, печатает DIRECTUS_TOKEN
 # вставьте DIRECTUS_TOKEN в .env
 pnpm seed                       # контент из репозитория → Directus
-
-# В .env.local для Next (или том же .env):
-#   DIRECTUS_URL=http://localhost:8055
-#   DIRECTUS_TOKEN=...
-#   CONTENT_FALLBACK=static     # страховка, если CMS ещё не поднят
 
 pnpm dev                        # http://localhost:3000 → /ru
 ```
@@ -53,7 +53,7 @@ pnpm dev                        # http://localhost:3000 → /ru
 | ------------------------ | ----------------------------------------------------------------- |
 | `NEXT_PUBLIC_SITE_URL`   | Canonical (обязателен при `APP_ENV=production`)                   |
 | `APP_ENV`                | `production` на VDS — robots Allow, HSTS, проверка SITE_URL       |
-| `NEXT_PUBLIC_IMAGE_HOST` | Hostname ассетов Directus (`localhost:8055` или `cms.example.ru`) |
+| `NEXT_PUBLIC_IMAGE_HOST` | Hostname ассетов Directus (`cms.hizhina-sakhalin.ru`)             |
 | `DIRECTUS_URL`           | Серверный URL CMS                                                 |
 | `DIRECTUS_TOKEN`         | Static token роли Website                                         |
 | `REVALIDATE_SECRET`      | Секрет webhook `/api/revalidate`                                  |
@@ -117,8 +117,8 @@ curl -fsSL https://get.pnpm.io/install.sh | sh -
 # либо запускайте скрипты через временный контейнер node (ниже)
 ```
 
-Файрвол (пример ufw): разрешить `22/80`, остальное закрыть.
-Порты `3000` и `8055` снаружи не открывать — к ним ходит только NPM внутри Docker-сети.
+Файрвол (пример ufw): разрешить `22/80` (и `443` после TLS), остальное закрыть.
+Порты `3000` и `8055` снаружи не открывать — к ним ходит только Nginx внутри Docker-сети.
 
 ### 2. DNS
 
@@ -130,39 +130,22 @@ curl -fsSL https://get.pnpm.io/install.sh | sh -
 | A            | `www`      | IP VDS   |
 | A            | `cms`      | IP VDS   |
 
-Дождитесь резолва (`dig +short example.ru`), иначе Let's Encrypt не выдаст сертификат.
+Дождитесь резолва (`dig +short hizhina-sakhalin.ru`), иначе сертификат не выдастся.
 
 ### 3. Код и `.env`
 
 ```bash
 git clone <repo> /opt/hizhina && cd /opt/hizhina
 cp .env.example .env
-nano .env
+nano .env   # заменить все CHANGE_ME_*; после bootstrap — DIRECTUS_TOKEN
 ```
 
-Обязательно задать:
+[`.env.example`](.env.example) уже заполнен под production: домен
+`hizhina-sakhalin.ru`, `cms.hizhina-sakhalin.ru`, `APP_ENV=production`,
+пустой `CONTENT_FALLBACK`. В Docker `web` всё равно ходит на
+`http://directus:8055` внутри сети Compose.
 
-```env
-APP_ENV=production
-NEXT_PUBLIC_SITE_URL=https://example.ru
-NEXT_PUBLIC_IMAGE_HOST=cms.example.ru
-DIRECTUS_PUBLIC_URL=https://cms.example.ru
-SITE_DOMAIN=example.ru
-CMS_DOMAIN=cms.example.ru
-# DIRECTUS_URL для контейнера web подставляется в compose как http://directus:8055
-
-POSTGRES_PASSWORD=<длинный>
-DIRECTUS_SECRET=<длинный-random>
-DIRECTUS_ADMIN_EMAIL=you@example.ru
-DIRECTUS_ADMIN_PASSWORD=<сложный>
-REVALIDATE_SECRET=<длинный>
-
-# После bootstrap:
-DIRECTUS_TOKEN=
-```
-
-`CONTENT_FALLBACK` в runtime на VDS лучше оставить пустым (источник — Directus).
-На этапе Docker-сборки `web` fallback уже зашит в compose.
+На этапе Docker-сборки `web` fallback в TS уже зашит в compose (build-arg).
 
 ### 4. Первый запуск
 
@@ -176,30 +159,27 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 ### 5. Nginx gateway
 
-Перед запуском укажите в `.env` реальные домены:
+Домены уже в `.env.example`:
 
 ```env
-SITE_DOMAIN=example.ru
-CMS_DOMAIN=cms.example.ru
+SITE_DOMAIN=hizhina-sakhalin.ru www.hizhina-sakhalin.ru
+CMS_DOMAIN=cms.hizhina-sakhalin.ru
 ```
 
-Nginx автоматически направляет `SITE_DOMAIN` на `web:3000`, а `CMS_DOMAIN` на
-`directus:8055`. Конфигурация находится в `nginx/templates/default.conf.template`.
-Она также передаёт WebSocket и стандартные forwarded-заголовки. После DNS на IP
-сервера сайт и CMS будут доступны по HTTP на 80-м порту.
-
-Для первого HTTP-запуска задайте также `NEXT_PUBLIC_SITE_URL=http://example.ru`,
-`DIRECTUS_PUBLIC_URL=http://cms.example.ru` и `NEXT_PUBLIC_IMAGE_PROTOCOL=http`.
-После подключения TLS верните `https` и пересоберите `web`.
+Nginx направляет сайт на `web:3000`, CMS на `directus:8055`
+(`nginx/templates/default.conf.template`). Сейчас gateway слушает **HTTP :80**;
+после подключения TLS верните `https` в `NEXT_PUBLIC_SITE_URL` /
+`DIRECTUS_PUBLIC_URL` / `NEXT_PUBLIC_IMAGE_PROTOCOL` (уже так в example) и
+пересоберите `web`. Для временного HTTP до TLS смените эти три значения на
+`http` и `NEXT_PUBLIC_IMAGE_PROTOCOL=http`, затем снова на `https`.
 
 ### 6. Схема и контент Directus (один раз)
 
 С хоста, когда CMS уже доступен по HTTPS (или временно пробросьте порт):
 
 ```bash
-# в .env для скриптов:
-# DIRECTUS_URL=https://cms.example.ru
-# BOOTSTRAP_ADMIN_EMAIL / PASSWORD = как DIRECTUS_ADMIN_*
+# в .env для скриптов уже стоит:
+# DIRECTUS_URL=https://cms.hizhina-sakhalin.ru
 
 pnpm install   # если Node на сервере есть
 pnpm bootstrap:directus   # напечатает DIRECTUS_TOKEN
@@ -235,10 +215,10 @@ URL внутренний (`web`), не публичный домен.
 
 ### 8. Проверка
 
-- `https://example.ru` и `https://example.ru/en` открываются
-- `https://cms.example.ru` — логин в Directus
-- `https://example.ru/robots.txt` — `Allow: /`
-- правка цены домика в CMS → через несколько секунд на сайте без ребилда
+- `https://hizhina-sakhalin.ru` и `/en` открываются (или `http://` до TLS)
+- `https://cms.hizhina-sakhalin.ru` — логин в Directus
+- `/robots.txt` — `Allow: /` при `APP_ENV=production`
+- правка цены домика в CMS → на сайте без ребилда
 - Telegram deep link `?start=cabin-a` живой
 
 ### Обновление кода
@@ -255,17 +235,16 @@ Volumes Postgres и uploads сохраняются.
 
 - Postgres: `docker compose exec db pg_dump -U directus directus > backup.sql`
 - Uploads Directus: volume `hizhina_directus_uploads`
-- NPM (прокси + сертификаты): volumes `npm_data`, `npm_letsencrypt`
 
 ### Типичные проблемы
 
 | Симптом                  | Что проверить                                                   |
 | ------------------------ | --------------------------------------------------------------- |
-| Нет HTTPS                | Этот вариант gateway намеренно начинает с HTTP; подключите TLS отдельно |
-| Сайт без картинок из CMS | `NEXT_PUBLIC_IMAGE_HOST=cms.example.ru`, пересборка `web`       |
+| Нет HTTPS                | Gateway сейчас на HTTP :80; TLS подключайте отдельно            |
+| Сайт без картинок из CMS | `NEXT_PUBLIC_IMAGE_HOST=cms.hizhina-sakhalin.ru`, rebuild `web` |
 | 502 от Nginx             | `docker compose ps` — живы ли `web`/`directus`; логи `nginx`    |
 | Контент не обновляется   | Flow, `REVALIDATE_SECRET`, логи `web`                           |
-| Bootstrap не логинится   | `DIRECTUS_URL` с хоста = публичный `https://cms…`, пароль admin |
+| Bootstrap не логинится   | `DIRECTUS_URL=https://cms.hizhina-sakhalin.ru`, пароль admin    |
 
 ---
 
