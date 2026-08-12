@@ -84,6 +84,8 @@ services:
       dockerfile: nginx-ui.Dockerfile
     image: hizhina-nginx-ui:local
     restart: unless-stopped
+    environment:
+      NGINX_UI_IGNORE_DOCKER_SOCKET: "true"
     ports:
       - "80:80"
       - "9000:9000"

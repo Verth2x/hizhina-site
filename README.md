@@ -170,6 +170,8 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 Для `hizhina-sakhalin.ru` и `cms.hizhina-sakhalin.ru` оба proxy-сайта уже
 добавлены в стартовый образ: сайт работает сразу, ещё до первого входа в UI.
+Проверка Docker socket в UI отключена: этот стек не передаёт панели доступ к
+Docker Engine, поскольку ей не нужно управлять другими контейнерами.
 
 До TLS сайт работает по HTTP :80. После включения HTTPS укажите `https://` в
 `NEXT_PUBLIC_SITE_URL` и `DIRECTUS_PUBLIC_URL`, задайте
