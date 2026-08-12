@@ -88,6 +88,7 @@ services:
       NGINX_UI_IGNORE_DOCKER_SOCKET: "true"
     ports:
       - "80:80"
+      - "443:443"
       - "9000:9000"
     volumes:
       - nginx_config:/etc/nginx
