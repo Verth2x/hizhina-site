@@ -1,4 +1,4 @@
-import type { Locale } from "@/i18n/config";
+import type { Locale } from '@/i18n/config';
 import type {
   Cabin,
   Extra,
@@ -8,7 +8,7 @@ import type {
   ServiceKey,
   SiteContent,
   SiteSettings,
-} from "../types";
+} from '../types';
 
 export type DirectusFile = {
   id: string;
@@ -60,12 +60,13 @@ export type DirectusCabin = {
   price_note?: string | null;
   price_unit?: string | null;
   image?: DirectusFile | string | null;
-  gallery?: Array<DirectusFile | string> | null;
+  gallery?: Array<DirectusFile | string | { directus_files_id: DirectusFile | string }> | null;
   features?: string[] | null;
   rules?: string[] | null;
 };
 
 export type DirectusService = {
+  gallery?: Array<DirectusFile | string | { directus_files_id: DirectusFile | string }> | null;
   locale: Locale;
   status: string;
   key: ServiceKey;
@@ -89,20 +90,13 @@ function assetBaseUrl(): string {
   // Публичный URL ассетов для браузера — через IMAGE_HOST или PUBLIC Directus URL.
   const host = process.env.NEXT_PUBLIC_IMAGE_HOST?.trim();
   if (host) {
-    const configuredProtocol = process.env.NEXT_PUBLIC_IMAGE_PROTOCOL?.trim();
-    const protocol =
-      configuredProtocol === "http" || configuredProtocol === "https"
-        ? configuredProtocol
-        : host.startsWith("localhost") || host.startsWith("127.")
-          ? "http"
-          : "https";
+    const protocol = host.startsWith('localhost') || host.startsWith('127.') || /^[0-9.]+(:|$)/.test(host) ? 'http' : 'https';
     return `${protocol}://${host}`;
   }
-  return (
-    process.env.DIRECTUS_PUBLIC_URL ||
-    process.env.DIRECTUS_URL ||
-    "http://localhost:8055"
-  ).replace(/\/+$/, "");
+  return (process.env.DIRECTUS_PUBLIC_URL || process.env.DIRECTUS_URL || 'http://localhost:8055').replace(
+    /\/+$/,
+    '',
+  );
 }
 
 export function mapMedia(
@@ -110,10 +104,10 @@ export function mapMedia(
   fallbackAlt?: string,
 ): MediaSource | undefined {
   if (!file) return undefined;
-  const id = typeof file === "string" ? file : file.id;
+  const id = typeof file === 'string' ? file : file.id;
   if (!id) return undefined;
   const alt =
-    typeof file === "string"
+    typeof file === 'string'
       ? fallbackAlt
       : file.description || file.title || fallbackAlt || undefined;
   return { src: `${assetBaseUrl()}/assets/${id}`, alt };
@@ -141,8 +135,17 @@ function mapSettings(row: DirectusSettings): SiteSettings {
 }
 
 function mapCabin(row: DirectusCabin): Cabin {
-  const gallery = (row.gallery ?? [])
-    .map((f) => mapMedia(f, row.name))
+  // M2M отдаёт строки junction-таблицы: сам файл лежит внутри
+  // directus_files_id. Разворачиваем, сохраняя совместимость со старой
+  // плоской формой — на случай отката схемы.
+  const gallery = ((row.gallery ?? []) as Array<unknown>)
+    .map((entry) => {
+      const unwrapped =
+        entry && typeof entry === 'object' && 'directus_files_id' in entry
+          ? (entry as { directus_files_id: unknown }).directus_files_id
+          : entry;
+      return mapMedia(unwrapped as never, row.name);
+    })
     .filter((m): m is MediaSource => !!m);
 
   return {
@@ -161,7 +164,19 @@ function mapCabin(row: DirectusCabin): Cabin {
 }
 
 function mapService(row: DirectusService): Service {
+  // Та же развёртка M2M, что у домиков: файл лежит внутри directus_files_id.
+  const gallery = ((row.gallery ?? []) as Array<unknown>)
+    .map((entry) => {
+      const unwrapped =
+        entry && typeof entry === 'object' && 'directus_files_id' in entry
+          ? (entry as { directus_files_id: unknown }).directus_files_id
+          : entry;
+      return mapMedia(unwrapped as never, row.name);
+    })
+    .filter((m): m is MediaSource => !!m);
+
   return {
+    gallery: gallery.length ? gallery : undefined,
     key: row.key,
     name: row.name,
     description: row.description,

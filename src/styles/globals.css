@@ -7,6 +7,19 @@
     scroll-padding-top: 5.5rem;
   }
 
+  /*
+   * Страховка, а не решение. Настоящая причина горизонтального переполнения
+   * всегда конкретна — чаще всего grid- или flex-элемент без min-w-0.
+   * Но одна незамеченная широкая строка не должна отправлять весь мобильный
+   * макет в масштаб 50%, поэтому по оси X подрезаем.
+   *
+   * clip, а не hidden: hidden создал бы контекст прокрутки и сломал
+   * position: sticky внутри страницы.
+   */
+  html {
+    overflow-x: clip;
+  }
+
   body {
     background-color: var(--color-surface);
     color: var(--color-text-primary);
@@ -213,5 +226,231 @@
   .hero-scrim-blur {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
+  }
+}
+
+/**
+ * Разделитель секций.
+ *
+ * Между близкими тонами градиент невидим: разница яркости — единицы
+ * процентов. Линия решает ту же задачу честнее и не спорит с видео.
+ *
+ * На тёмных секциях цвет берётся из инверсного токена, поэтому один
+ * класс работает на любом фоне.
+ */
+.section-rule {
+  border-top: 1px solid var(--color-border);
+}
+
+.bg-surface-inverse.section-rule,
+.bg-surface-deep.section-rule {
+  border-top-color: var(--color-border-inverse);
+}
+
+/**
+ * Мобильный первый экран.
+ *
+ * На десктопе .hero-panel — компактная карточка на трети экрана, и плотное
+ * стекло там уместно. На телефоне та же панель растягивается почти на весь
+ * кадр, и brightness(0.5) с blur(20px) убивают видео целиком.
+ *
+ * Ниже 768px меняем стратегию: вместо равномерного стекла — вертикальный
+ * градиент, плотный под текстом и прозрачный сверху. Видео остаётся видно
+ * в верхних двух третях, а контраст держится там, где стоят буквы.
+ *
+ * Контраст под текстом: белый на rgb(20 17 13 / 0.72) поверх кадра — не
+ * ниже 9:1 даже на светлом кадре, с запасом к AAA.
+ */
+@media (width < 768px) {
+  .hero-panel {
+    background: linear-gradient(
+      to top,
+      rgb(20 17 13 / 0.78) 0%,
+      rgb(20 17 13 / 0.62) 45%,
+      rgb(20 17 13 / 0.32) 75%,
+      rgb(20 17 13 / 0.12) 100%
+    );
+    -webkit-backdrop-filter: blur(6px) brightness(0.82);
+    backdrop-filter: blur(6px) brightness(0.82);
+    border: 0;
+    box-shadow: none;
+  }
+
+  /* Без backdrop-filter вытягиваем только плотностью. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .hero-panel {
+      background: linear-gradient(
+        to top,
+        rgb(20 17 13 / 0.88) 0%,
+        rgb(20 17 13 / 0.76) 45%,
+        rgb(20 17 13 / 0.5) 75%,
+        rgb(20 17 13 / 0.28) 100%
+      );
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .hero-panel {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background: rgb(20 17 13 / 0.86);
+    }
+  }
+}
+
+/**
+ * Мобильный первый экран.
+ *
+ * .hero-scrim рассчитан на горизонтальную композицию: плотно слева, чисто
+ * справа. На телефоне текст занимает всю ширину, и тот же градиент гасит
+ * кадр целиком.
+ *
+ * Ниже 768px разворачиваем его снизу вверх и сильно ослабляем: плотность
+ * только под буквами, верхние две трети кадра остаются открытыми.
+ * Размытие срезаем с 14px до 5px — видео должно читаться как видео.
+ *
+ * Контраст белого на rgb(20 17 13 / 0.7) поверх кадра — от 9:1, запас к AAA.
+ */
+@media (width < 768px) {
+  .hero-scrim {
+    background: linear-gradient(
+      to top,
+      rgb(20 17 13 / 0.8) 0%,
+      rgb(20 17 13 / 0.58) 38%,
+      rgb(20 17 13 / 0.26) 66%,
+      rgb(20 17 13 / 0.08) 88%,
+      transparent 100%
+    );
+  }
+
+  .hero-scrim-blur {
+    -webkit-backdrop-filter: blur(5px) saturate(1.04);
+    backdrop-filter: blur(5px) saturate(1.04);
+    -webkit-mask-image: linear-gradient(to top, black 0%, black 32%, transparent 72%);
+    mask-image: linear-gradient(to top, black 0%, black 32%, transparent 72%);
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .hero-scrim {
+      background: linear-gradient(
+        to top,
+        rgb(20 17 13 / 0.88) 0%,
+        rgb(20 17 13 / 0.7) 38%,
+        rgb(20 17 13 / 0.4) 66%,
+        transparent 100%
+      );
+    }
+  }
+}
+
+
+@media (width >= 1024px) {
+  .site-rails {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .site-rails::before,
+  .site-rails::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgb(20 17 13 / 0.07);
+    box-shadow: 1px 0 0 rgb(255 255 255 / 0.05);
+
+    /* Линии гаснут у кромок экрана — так они выглядят частью разворота,
+       а не рамкой, упирающейся в края окна. */
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 14%,
+      black 86%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 14%,
+      black 86%,
+      transparent 100%
+    );
+  }
+
+  /* Позиция = край контейнера: половина экрана минус половина max-w-main
+     (77.5rem) плюс gutter (3rem на этой ширине). */
+  .site-rails::before {
+    left: max(3rem, calc(50% - 38.75rem + 3rem));
+  }
+
+  .site-rails::after {
+    right: max(3rem, calc(50% - 38.75rem + 3rem));
+  }
+}
+
+
+
+/**
+ * Боковой узор контентных секций.
+ *
+ * Диагональная штриховка — тот же приём, что в утилите hatch у плейсхолдеров,
+ * поэтому она читается как часть языка проекта, а не как чужой орнамент.
+ * Здесь она вынесена в поля по краям, где всё равно пусто, и не спорит
+ * с текстом.
+ *
+ * :not(:first-of-type) исключает первый экран: поверх видео узор был бы
+ * мусором. Секции идут встык, поэтому полосы выглядят непрерывными.
+ *
+ * Две линии подряд — тёмная и светлая: на льняных секциях видна первая,
+ * на тёмной бане вторая. Одна пара штрихов работает на любом фоне без
+ * режимов наложения.
+ *
+ * Ширина = всё, что снаружи текстовой колонки: половина экрана минус
+ * половина max-w-main (77.5rem) плюс gutter (3rem).
+ */
+@media (width >= 1024px) {
+  main > section:not(:first-of-type) {
+    position: relative;
+  }
+
+  main > section:not(:first-of-type)::before,
+  main > section:not(:first-of-type)::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 1;
+    width: calc(max(0px, 50% - 38.75rem) + 3rem);
+    pointer-events: none;
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent 0 7px,
+      rgb(20 17 13 / 0.055) 7px 8px,
+      rgb(255 255 255 / 0.05) 8px 9px
+    );
+  }
+
+  /* Штриховка гаснет к тексту — у колонки остаётся воздух. */
+  main > section:not(:first-of-type)::before {
+    left: 0;
+    -webkit-mask-image: linear-gradient(to right, black 0%, black 40%, transparent 100%);
+    mask-image: linear-gradient(to right, black 0%, black 40%, transparent 100%);
+  }
+
+  main > section:not(:first-of-type)::after {
+    right: 0;
+    -webkit-mask-image: linear-gradient(to left, black 0%, black 40%, transparent 100%);
+    mask-image: linear-gradient(to left, black 0%, black 40%, transparent 100%);
+  }
+}
+
+@media (prefers-contrast: more), (prefers-reduced-transparency: reduce) {
+  main > section::before,
+  main > section::after {
+    display: none;
   }
 }

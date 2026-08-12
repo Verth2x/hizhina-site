@@ -43,7 +43,7 @@ export function Hero({ content, messages }: { content: SiteContent; messages: Me
         <div aria-hidden="true" className="hatch absolute inset-0 opacity-30" />
       )}
 
-      <div className="gutter relative flex min-h-[82svh] w-full flex-col justify-center pt-28 pb-20 md:min-h-[92svh]">
+      <div className="gutter relative flex min-h-svh w-full flex-col justify-end pt-28 pb-14 md:min-h-screen md:justify-center md:pb-20">
         <div className="max-w-2xl lg:max-w-3xl">
           {/* Тонкая черта над надзаголовком — единственная линия на экране,
               она задаёт левый край всей колонки. */}
@@ -65,7 +65,7 @@ export function Hero({ content, messages }: { content: SiteContent; messages: Me
 
           <h1
             className={cn(
-              'text-display mt-6',
+              'text-display mt-4 md:mt-6',
               hasBackdrop
                 ? 'text-white [text-shadow:0_2px_40px_rgb(20_17_13/0.55)]'
                 : 'text-text-primary',

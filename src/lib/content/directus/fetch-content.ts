@@ -30,11 +30,11 @@ export async function fetchSiteContentFromDirectus(locale: Locale): Promise<Site
     ),
     directusGetItems<DirectusCabin>(
       'cabins',
-      `filter[locale][_eq]=${locale}&filter[status][_eq]=published&sort=sort&fields=*,image.id,image.title,image.description`,
+      `filter[locale][_eq]=${locale}&filter[status][_eq]=published&sort=sort&fields=*,image.id,image.title,image.description,gallery.directus_files_id.id,gallery.directus_files_id.title,gallery.directus_files_id.description`,
     ),
     directusGetItems<DirectusService>(
       'services',
-      `filter[locale][_eq]=${locale}&filter[status][_eq]=published&sort=sort&fields=*,image.id,image.title,image.description`,
+      `filter[locale][_eq]=${locale}&filter[status][_eq]=published&sort=sort&fields=*,image.id,image.title,image.description,gallery.directus_files_id.id,gallery.directus_files_id.title,gallery.directus_files_id.description`,
     ),
     directusGetItems<DirectusExtra>(
       'extras',

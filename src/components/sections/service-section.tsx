@@ -4,6 +4,7 @@ import { Media } from '@/components/ui/media';
 import type { Messages } from '@/i18n/config';
 import type { Service } from '@/lib/content/types';
 import { cn } from '@/lib/utils/cn';
+import { CabinGallery } from './cabin-gallery';
 
 export function ServiceSection({
   service,
@@ -29,19 +30,34 @@ export function ServiceSection({
         tone === 'sunk' && 'bg-surface-sunk',
       )}
     >
-      <div className="max-w-main gutter mx-auto grid items-center gap-10 md:grid-cols-2">
-        <div className={cn(mediaSide === 'right' && 'md:order-2')}>
-          <Media
+      <div className="max-w-main gutter mx-auto grid items-center gap-10 md:grid-cols-2 lg:items-stretch">
+        <div className={cn('lg:py-3', mediaSide === 'right' && 'md:order-2')}>
+          {service.gallery && service.gallery.length > 0 ? (
+            // Несколько фото — карусель. Компонент общий с домиками,
+            // название историческое.
+            <CabinGallery
+              images={service.gallery}
+              alt={service.name}
+              labels={{
+                placeholder: messages.common.photoSoon,
+                prev: messages.actions.prevPhoto,
+                next: messages.actions.nextPhoto,
+                thumbTemplate: messages.common.photoOf,
+              }}
+            />
+          ) : (
+            <Media
             alt={service.name}
             source={service.image}
             ratio="4/3"
             placeholderLabel={messages.common.photoSoon}
             sizes="(min-width: 768px) 46vw, 100vw"
-            className="rounded-lg"
+            className="media-fill rounded-lg lg:aspect-auto"
           />
+          )}
         </div>
 
-        <div>
+        <div className="lg:self-center">
           <h2 className={cn('text-h1', dark ? 'text-text-inverse' : 'text-text-primary')}>
             {service.name}
           </h2>

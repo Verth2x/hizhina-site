@@ -55,6 +55,8 @@ export type Service = {
   price: string;
   standaloneBookable: boolean;
   image?: MediaSource;
+  /** Карусель фото услуги. Пусто — показывается одиночное image. */
+  gallery?: MediaSource[];
 };
 
 export type Extra = { id: string; name: string; price: number };

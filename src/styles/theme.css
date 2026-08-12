@@ -131,9 +131,9 @@
   --text-h3--font-weight: 400;
   --text-lead: clamp(1.05rem, 1.6vw, 1.25rem);
   --text-lead--line-height: 1.6;
-  --text-body: 1rem;
+  --text-body: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
   --text-body--line-height: 1.7;
-  --text-small: 0.875rem;
+  --text-small: clamp(0.9375rem, 0.9rem + 0.22vw, 1.0625rem);
   --text-small--line-height: 1.6;
   --text-price: clamp(1.75rem, 3vw, 2.375rem);
   --text-price--line-height: 1;
@@ -147,7 +147,7 @@
 
   /* Лейбл, который нужно прочитать (термины <dt> в контактах): 13px и вдвое
      меньший трекинг — прописная кириллица на разрядке 0.28em теряет слово. */
-  --text-meta: 0.8125rem;
+  --text-meta: clamp(0.875rem, 0.85rem + 0.16vw, 0.9375rem);
   --text-meta--line-height: 1.5;
   --text-meta--letter-spacing: 0.18em;
   --text-meta--font-weight: 500;
@@ -303,4 +303,17 @@
     var(--color-border) 14px,
     var(--color-border) 15px
   );
+}
+
+/* Фотографии контентных блоков (About, услуги, галерея домика).
+   Кадр 4/3 на десктопе давал мелкий снимок в широкой колонке: тянем его
+   на высоту строки сетки. Колонка получает вертикальные поля (lg:py-3),
+   поэтому края блока читаются как рамка, а не как обрез.
+   Первый экран не трогаем — там своё видео. */
+@utility media-fill {
+  @media (width >= 1024px) {
+    aspect-ratio: auto;
+    height: 100%;
+    min-height: clamp(30rem, 66vh, 46rem);
+  }
 }

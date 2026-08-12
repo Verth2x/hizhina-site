@@ -90,7 +90,7 @@ export function Contacts({ settings, messages }: { settings: SiteSettings; messa
                   распадается на буквы.
                 */}
                 <dt className="text-meta uppercase opacity-60">{line.label}</dt>
-                <dd className="mt-1.5 text-lg font-light">{line.value}</dd>
+                <dd className="mt-1.5 text-lg font-light break-words">{line.value}</dd>
               </div>
             ))}
           </dl>

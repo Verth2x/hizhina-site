@@ -65,9 +65,13 @@ export function CabinGallery({
     labels.thumbTemplate.replace('{n}', String(position + 1)).replace('{total}', String(total));
 
   return (
-    <div>
+    // min-w-0 обязателен: это grid-элемент, а у grid-элементов min-width по
+    // умолчанию auto — то есть равен min-content. Дорожка миниатюр шире
+    // экрана, поэтому без сброса колонка растягивалась до её ширины (676px),
+    // страница переставала помещаться, и мобильный браузер отъезжал по X.
+    <div className="min-w-0">
       <div
-        className="bg-surface relative aspect-4/3 overflow-hidden rounded-lg"
+        className="bg-surface media-fill relative aspect-4/3 overflow-hidden rounded-lg lg:aspect-auto"
         {...(current ? {} : { role: 'img', 'aria-label': alt + '. ' + labels.placeholder })}
       >
         {current ? (
@@ -119,7 +123,10 @@ export function CabinGallery({
           // scrollbar-width:none повторяет референс: дорожка листается жестом,
           // стрелками и клавишами, но системный скроллбар под миниатюрами
           // ломал бы ритм блока.
-          className="flex items-center gap-2.5 overflow-x-auto px-11 py-2.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          // На мобильном стрелок нет, поэтому и место под них не резервируем:
+          // px-11 съедал 88px из 350 доступных. Прилипание по оси X даёт
+          // пальцу останавливаться ровно на кадре, а не между двумя.
+          className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto px-0 py-2.5 sm:gap-2.5 sm:px-11 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {slides.map((slide, position) => {
             const active = position === index;
@@ -136,10 +143,10 @@ export function CabinGallery({
                 aria-label={label(position)}
                 onClick={() => select(position)}
                 className={cn(
-                  'bg-surface relative shrink-0 overflow-hidden rounded-sm transition-all duration-300',
+                  'bg-surface relative shrink-0 snap-start overflow-hidden rounded-sm transition-all duration-300',
                   active
-                    ? 'h-[99px] w-[132px] opacity-100'
-                    : 'h-[78px] w-[104px] opacity-50 hover:opacity-80',
+                    ? 'h-[66px] w-[88px] opacity-100 sm:h-[99px] sm:w-[132px]'
+                    : 'h-[54px] w-[72px] opacity-50 hover:opacity-80 sm:h-[78px] sm:w-[104px]',
                 )}
               >
                 {slide ? (
@@ -198,7 +205,9 @@ function StripButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'bg-surface border-border-interactive text-text-primary absolute top-1/2 z-10 grid size-[38px] -translate-y-1/2 place-items-center rounded-full border transition-colors',
+        // hidden на мобильном: пальцем дорожка листается свайпом, а две
+        // кнопки по краям отнимали бы место у самих миниатюр.
+        'bg-surface border-border-interactive text-text-primary absolute top-1/2 z-10 hidden size-[38px] -translate-y-1/2 place-items-center rounded-full border transition-colors sm:grid',
         'hover:border-text-primary disabled:pointer-events-none disabled:opacity-30',
         side === 'prev' ? 'left-0' : 'right-0',
       )}

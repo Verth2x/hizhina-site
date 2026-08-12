@@ -22,7 +22,10 @@ export function generateStaticParams() {
  * 404 на любой другой сегмент (`/de`, `/admin`) силами роутера — не доходя
  * до рендера лейаута.
  */
-export const dynamicParams = false;
+// Было false: Next отдавал 404, если страницы не оказалось в сборке.
+// Любой сбой Directus в момент сборки клал весь сайт. Теперь
+// недостающая страница рендерится по запросу.
+export const dynamicParams = true;
 
 export const viewport: Viewport = {
   themeColor: [
