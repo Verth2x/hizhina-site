@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 /** HSTS и upgrade-insecure-requests — только когда явно прод (VDS). */
 const isProd = process.env.APP_ENV === "production";
+const usesHttps =
+  process.env.NEXT_PUBLIC_SITE_URL?.trim().startsWith("https://") ?? false;
 
 /**
  * Домен, откуда приходят фотографии (Directus assets).
@@ -58,7 +60,7 @@ const csp = [
   "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com https://va.vercel-scripts.com",
   "frame-src https://mc.yandex.ru",
   "manifest-src 'self'",
-  ...(isProd ? ["upgrade-insecure-requests"] : []),
+  ...(usesHttps ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
 const securityHeaders = [
@@ -72,7 +74,7 @@ const securityHeaders = [
   { key: "Content-Security-Policy", value: csp },
 ];
 
-if (isProd) {
+if (isProd && usesHttps) {
   securityHeaders.push({
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",

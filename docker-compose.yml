@@ -77,17 +77,19 @@ services:
     networks:
       - internal
 
-  # Gateway запускается вместе со стеком; правила находятся в nginx/templates.
+  # Gateway runs with Nginx UI; proxy sites are seeded by nginx-ui.Dockerfile.
   nginx:
-    image: nginx:1.27-alpine
+    build:
+      context: .
+      dockerfile: nginx-ui.Dockerfile
+    image: hizhina-nginx-ui:local
     restart: unless-stopped
     ports:
       - "80:80"
-    environment:
-      SITE_DOMAIN: ${SITE_DOMAIN:-_}
-      CMS_DOMAIN: ${CMS_DOMAIN:-cms.localhost}
+      - "9000:9000"
     volumes:
-      - ./nginx/templates:/etc/nginx/templates:ro
+      - nginx_config:/etc/nginx
+      - nginx_ui_data:/etc/nginx-ui
     depends_on:
       - web
       - directus
@@ -98,6 +100,8 @@ volumes:
   pgdata:
   directus_uploads:
   directus_extensions:
+  nginx_config:
+  nginx_ui_data:
 
 networks:
   internal:

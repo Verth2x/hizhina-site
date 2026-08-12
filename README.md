@@ -2,7 +2,7 @@
 
 Одностраничный сайт с приёмом заявок через Telegram-бот. Две локали (ru/en).
 Контент ведётся в **Directus** (PostgreSQL); сайт — Next.js за Docker Compose.
-На VDS весь стек работает за декларативным **Nginx**. Правила проксирования лежат в репозитории и не требуют настройки в интерфейсе.
+На VDS весь стек работает за **Nginx UI**: Nginx gateway с веб-интерфейсом для сайтов, сертификатов и логов.
 
 - **Стек:** Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 · Directus 11 · Postgres 16
 - **Пакетный менеджер:** pnpm 10
@@ -18,7 +18,7 @@ cp .env.example .env
 #   APP_ENV=  CONTENT_FALLBACK=static
 #   DIRECTUS_URL=http://localhost:8055  DIRECTUS_PUBLIC_URL=http://localhost:8055
 #   NEXT_PUBLIC_SITE_URL=http://localhost:3000  NEXT_PUBLIC_IMAGE_HOST=localhost:8055
-#   NEXT_PUBLIC_IMAGE_PROTOCOL=http  SITE_DOMAIN=_  CMS_DOMAIN=cms.localhost
+#   NEXT_PUBLIC_IMAGE_PROTOCOL=http
 # и все CHANGE_ME_* пароли / секреты
 
 pnpm install
@@ -32,16 +32,16 @@ pnpm dev                        # http://localhost:3000 → /ru
 
 Команды:
 
-| Команда                              | Что делает                               |
-| ------------------------------------ | ---------------------------------------- |
-| `pnpm dev`                           | Дев-сервер                               |
-| `pnpm build` / `start`               | Продовая сборка / запуск                 |
-| `pnpm bootstrap:directus`            | Схема + роль Website + static token      |
-| `pnpm seed`                          | Залить контент в Directus                |
-| `pnpm compose:up`                    | Postgres + Directus                      |
-| `pnpm compose:web`                   | Собрать и поднять Next в Docker          |
-| `pnpm compose:proxy`                 | Поднять весь стек, включая Nginx gateway |
-| `pnpm lint` / `typecheck` / `format` | Проверки и формат                        |
+| Команда                              | Что делает                          |
+| ------------------------------------ | ----------------------------------- |
+| `pnpm dev`                           | Дев-сервер                          |
+| `pnpm build` / `start`               | Продовая сборка / запуск            |
+| `pnpm bootstrap:directus`            | Схема + роль Website + static token |
+| `pnpm seed`                          | Залить контент в Directus           |
+| `pnpm compose:up`                    | Postgres + Directus                 |
+| `pnpm compose:web`                   | Собрать и поднять Next в Docker     |
+| `pnpm compose:proxy`                 | Поднять весь стек, включая Nginx UI |
+| `pnpm lint` / `typecheck` / `format` | Проверки и формат                   |
 
 ---
 
@@ -49,15 +49,15 @@ pnpm dev                        # http://localhost:3000 → /ru
 
 Полный список — в [`.env.example`](.env.example).
 
-| Переменная               | Назначение                                                        |
-| ------------------------ | ----------------------------------------------------------------- |
-| `NEXT_PUBLIC_SITE_URL`   | Canonical (обязателен при `APP_ENV=production`)                   |
-| `APP_ENV`                | `production` на VDS — robots Allow, HSTS, проверка SITE_URL       |
-| `NEXT_PUBLIC_IMAGE_HOST` | Hostname ассетов Directus (`cms.hizhina-sakhalin.ru`)             |
-| `DIRECTUS_URL`           | Серверный URL CMS                                                 |
-| `DIRECTUS_TOKEN`         | Static token роли Website                                         |
-| `REVALIDATE_SECRET`      | Секрет webhook `/api/revalidate`                                  |
-| `CONTENT_FALLBACK`       | `static` — читать `site-content.ts`, если Directus недоступен     |
+| Переменная               | Назначение                                                    |
+| ------------------------ | ------------------------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`   | Canonical (обязателен при `APP_ENV=production`)               |
+| `APP_ENV`                | `production` на VDS — robots Allow, HSTS, проверка SITE_URL   |
+| `NEXT_PUBLIC_IMAGE_HOST` | Hostname ассетов Directus (`cms.hizhina-sakhalin.ru`)         |
+| `DIRECTUS_URL`           | Серверный URL CMS                                             |
+| `DIRECTUS_TOKEN`         | Static token роли Website                                     |
+| `REVALIDATE_SECRET`      | Секрет webhook `/api/revalidate`                              |
+| `CONTENT_FALLBACK`       | `static` — читать `site-content.ts`, если Directus недоступен |
 
 `NEXT_PUBLIC_*` вшиваются на **сборке**.
 
@@ -81,7 +81,6 @@ UI-строки (`src/i18n/messages`) и политика (`src/lib/legal/privac
 
 ```
 docker-compose.yml              db, directus, web, nginx
-nginx/templates/                декларативные правила gateway
 docker-compose.prod.yml         на VDS снимает публикацию портов web/directus
 Dockerfile                      Next standalone
 directus/                       схема (через bootstrap), flows
@@ -101,9 +100,9 @@ src/
 
 ## Хостинг на VDS
 
-Стек целиком в Docker: Postgres, Directus, Next и Nginx gateway.
+Стек целиком в Docker: Postgres, Directus, Next и Nginx UI.
 Vercel не нужен. Минимально: VPS с 2 GB RAM, Ubuntu 22.04+, открытые порты
-`22` и `80`.
+`22`, `80` и `9000` для первичной настройки Nginx UI.
 
 ### 1. Сервер
 
@@ -153,25 +152,28 @@ nano .env   # заменить все CHANGE_ME_*; после bootstrap — DIRE
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
-Поднимутся: `db`, `directus`, `web`, `nginx`. Снаружи открыт только `80`.
+Поднимутся: `db`, `directus`, `web`, `nginx`. Снаружи открыты `80` и панель Nginx UI на `9000`.
 
 Проверка: `docker compose ps`, логи — `docker compose logs -f nginx directus web`.
 
-### 5. Nginx gateway
+### 5. Nginx UI
 
-Домены уже в `.env.example`:
+После первого запуска откройте `http://<IP-VDS>:9000/install` и создайте
+учётную запись администратора. В **Sites** добавьте два reverse-proxy сайта:
 
-```env
-SITE_DOMAIN=hizhina-sakhalin.ru www.hizhina-sakhalin.ru
-CMS_DOMAIN=cms.hizhina-sakhalin.ru
-```
+- `hizhina-sakhalin.ru` и `www.hizhina-sakhalin.ru` → `http://web:3000`;
+- `cms.hizhina-sakhalin.ru` → `http://directus:8055`.
 
-Nginx направляет сайт на `web:3000`, CMS на `directus:8055`
-(`nginx/templates/default.conf.template`). Сейчас gateway слушает **HTTP :80**;
-после подключения TLS верните `https` в `NEXT_PUBLIC_SITE_URL` /
-`DIRECTUS_PUBLIC_URL` / `NEXT_PUBLIC_IMAGE_PROTOCOL` (уже так в example) и
-пересоберите `web`. Для временного HTTP до TLS смените эти три значения на
-`http` и `NEXT_PUBLIC_IMAGE_PROTOCOL=http`, затем снова на `https`.
+`web` и `directus` — имена сервисов Docker Compose, не `localhost`. В Nginx UI
+можно выпустить Let's Encrypt-сертификат, включить HTTPS и просматривать логи.
+После настройки ограничьте доступ к порту `9000` файрволом только своим IP.
+
+Для `hizhina-sakhalin.ru` и `cms.hizhina-sakhalin.ru` оба proxy-сайта уже
+добавлены в стартовый образ: сайт работает сразу, ещё до первого входа в UI.
+
+До TLS сайт работает по HTTP :80. После включения HTTPS укажите `https://` в
+`NEXT_PUBLIC_SITE_URL` и `DIRECTUS_PUBLIC_URL`, задайте
+`NEXT_PUBLIC_IMAGE_PROTOCOL=https` и пересоберите `web`.
 
 ### 6. Схема и контент Directus (один раз)
 
