@@ -173,6 +173,13 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 Проверка Docker socket в UI отключена: этот стек не передаёт панели доступ к
 Docker Engine, поскольку ей не нужно управлять другими контейнерами.
 
+Если Nginx UI был запущен до появления стартового сайта, добавьте его в уже
+созданный volume без удаления настроек:
+
+```bash
+docker compose exec nginx sh -c 'cp /usr/local/etc/nginx/sites-available/hizhina /etc/nginx/sites-available/hizhina && ln -sf ../sites-available/hizhina /etc/nginx/sites-enabled/hizhina && nginx -t && nginx -s reload'
+```
+
 До TLS сайт работает по HTTP :80. После включения HTTPS укажите `https://` в
 `NEXT_PUBLIC_SITE_URL` и `DIRECTUS_PUBLIC_URL`, задайте
 `NEXT_PUBLIC_IMAGE_PROTOCOL=https` и пересоберите `web`.
