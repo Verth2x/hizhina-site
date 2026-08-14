@@ -1,7 +1,6 @@
 # Зависимости и сборка
 node_modules
 .next/
-.vercel/
 out/
 
 # Переменные окружения. .env.example коммитится, .env / .env.local — нет.

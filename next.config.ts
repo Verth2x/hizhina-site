@@ -50,14 +50,14 @@ const csp = [
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  "script-src 'self' 'unsafe-inline' https://mc.yandex.ru https://yastatic.net https://va.vercel-scripts.com",
+  "script-src 'self' 'unsafe-inline' https://mc.yandex.ru https://yastatic.net",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://mc.yandex.ru" +
     (imageHost ? ` http://${imageHost} https://${imageHost}` : ""),
   "media-src 'self' blob:" +
     (imageHost ? ` http://${imageHost} https://${imageHost}` : ""),
   "font-src 'self' data:",
-  "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com https://va.vercel-scripts.com",
+  "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com",
   "frame-src https://mc.yandex.ru",
   "manifest-src 'self'",
   ...(usesHttps ? ["upgrade-insecure-requests"] : []),

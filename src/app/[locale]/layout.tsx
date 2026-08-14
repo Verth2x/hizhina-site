@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import { notFound } from 'next/navigation';
-import { Analytics } from '@vercel/analytics/next';
 import { YandexMetrica } from '@/components/analytics/yandex-metrica';
 import { BookingProvider } from '@/components/booking/booking-provider';
 import { ContactPopup } from '@/components/booking/contact-popup';
@@ -124,7 +123,6 @@ export default async function LocaleLayout({
           <ContactPopup settings={content.settings} messages={messages} />
         </BookingProvider>
         <YandexMetrica counterId={metricaId} />
-        <Analytics />
       </body>
     </html>
   );

@@ -6,7 +6,7 @@
 
 - **Стек:** Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 · Directus 11 · Postgres 16
 - **Пакетный менеджер:** pnpm 10
-- **Хостинг:** свой VDS (Vercel отложен)
+- **Хостинг:** свой VDS
 
 ---
 
@@ -101,7 +101,7 @@ src/
 ## Хостинг на VDS
 
 Стек целиком в Docker: Postgres, Directus, Next и Nginx UI.
-Vercel не нужен. Минимально: VPS с 2 GB RAM, Ubuntu 22.04+, открытые порты
+Минимально: VPS с 2 GB RAM, Ubuntu 22.04+, открытые порты
 `22`, `80`, `443` и `9000` для первичной настройки Nginx UI.
 
 ### 1. Сервер

@@ -1,6 +1,5 @@
 'use client';
 
-import { track as vercelTrack } from '@vercel/analytics';
 import type { Goal, GoalParams } from './goals';
 
 declare global {
@@ -10,7 +9,7 @@ declare global {
 }
 
 /**
- * Отправляет цель в оба счётчика и молчит, если ни один не подключён.
+ * Отправляет цель в Метрику и молчит, если счётчик не подключён.
  *
  * Аналитика не должна ронять интерфейс: пользователь нажал «Забронировать»,
  * и его задача — попасть в Telegram, а не пережить исключение из-за блокировщика
@@ -27,11 +26,5 @@ export function track(goal: Goal, params?: GoalParams): void {
     }
   } catch {
     // Метрика не загрузилась или заблокирована — это не повод ломать переход.
-  }
-
-  try {
-    vercelTrack(goal, params);
-  } catch {
-    // Vercel Analytics недоступен вне Vercel — ожидаемо.
   }
 }
