@@ -6,7 +6,7 @@ import { Modal } from '@/components/ui/modal';
 import type { Messages } from '@/i18n/config';
 import { GOALS, type Goal } from '@/lib/analytics/goals';
 import { track } from '@/lib/analytics/track';
-import { telegramBookingUrl } from '@/lib/booking/telegram';
+import { telegramAppUrl, telegramBookingUrl } from '@/lib/booking/telegram';
 import type { SiteSettings } from '@/lib/content/types';
 import { useBooking } from './booking-provider';
 
@@ -21,6 +21,7 @@ export function ContactPopup({
   const t = messages.popup;
 
   const botUrl = telegramBookingUrl(settings.telegramBot, subject);
+  const botAppUrl = telegramAppUrl(settings.telegramBot, subject);
 
   // Заявка уходит в мессенджер, то есть за пределы сайта. Клик по каналу —
   // последняя точка, где мы вообще видим пользователя, поэтому без этого
@@ -53,7 +54,24 @@ export function ContactPopup({
             href={botUrl}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={channel(GOALS.channelTelegram)}
+            onClick={(event) => {
+              channel(GOALS.channelTelegram)();
+              // https-ссылка открывает чат, но Start приходится жать руками.
+              // tg:// установленный клиент перехватывает и запускает бота сам.
+              // Пробуем схему первой; если приложения нет, ничего не произойдёт,
+              // и через 400 мс сработает обычный переход по href.
+              if (!botAppUrl) return;
+              event.preventDefault();
+              const fallback = window.setTimeout(() => {
+                window.open(botUrl, '_blank', 'noopener,noreferrer');
+              }, 400);
+              // Уход со страницы означает, что клиент перехватил ссылку —
+              // запасной переход тогда не нужен.
+              const cancel = () => window.clearTimeout(fallback);
+              window.addEventListener('pagehide', cancel, { once: true });
+              window.addEventListener('blur', cancel, { once: true });
+              window.location.href = botAppUrl;
+            }}
           >
             <Send size={20} strokeWidth={1.5} aria-hidden="true" />
             <span className="flex flex-col items-start leading-tight">
