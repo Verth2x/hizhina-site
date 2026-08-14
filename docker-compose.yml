@@ -35,8 +35,20 @@ services:
       ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD:-change-me-admin-password}
       PUBLIC_URL: ${DIRECTUS_PUBLIC_URL:-http://localhost:8055}
       WEBSOCKETS_ENABLED: "true"
-      CORS_ENABLED: "true"
-      CORS_ORIGIN: "true"
+      # Браузер никогда не обращается к Directus напрямую: сайт фетчит
+      # контент на сервере, а фото у гостей грузятся как обычные <img>,
+      # не через fetch/XHR — CORS с любого origin тут не нужен вообще.
+      CORS_ENABLED: "false"
+      # Общий rate-limiter на API (в т.ч. /auth/login). Пороги нарочно
+      # нежёсткие: билд/ревалидация делают по 5 параллельных запросов
+      # к Directus на каждую локаль, слишком тугой лимит валил бы их 429.
+      RATE_LIMITER_ENABLED: "true"
+      RATE_LIMITER_POINTS: "100"
+      RATE_LIMITER_DURATION: "1"
+      # Cookie только по HTTPS — сайт и CMS предполагаются доступными
+      # только по TLS (см. HSTS в next.config.ts).
+      SESSION_COOKIE_SECURE: "true"
+      REFRESH_TOKEN_COOKIE_SECURE: "true"
     volumes:
       - directus_uploads:/directus/uploads
       - directus_extensions:/directus/extensions
