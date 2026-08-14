@@ -110,17 +110,19 @@ export function MobileNav({
             <Button type="button" block size="lg" onClick={requestBooking}>
               {messages.actions.book}
             </Button>
-            <a
-              href={settings.phoneHref}
-              onClick={() => {
-                track(GOALS.phoneClick, { placement: 'mobile-nav' });
-                close();
-              }}
-              className="text-small text-text-secondary mt-4 flex items-center justify-center gap-2"
-            >
-              <Phone size={16} strokeWidth={1.5} aria-hidden="true" />
-              {settings.phone}
-            </a>
+            {settings.phoneHref ? (
+              <a
+                href={settings.phoneHref}
+                onClick={() => {
+                  track(GOALS.phoneClick, { placement: 'mobile-nav' });
+                  close();
+                }}
+                className="text-small text-text-secondary mt-4 flex items-center justify-center gap-2"
+              >
+                <Phone size={16} strokeWidth={1.5} aria-hidden="true" />
+                {settings.phone}
+              </a>
+            ) : null}
           </div>
         </Dialog.Content>
       </Dialog.Portal>

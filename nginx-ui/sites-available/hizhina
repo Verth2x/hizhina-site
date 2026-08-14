@@ -1,9 +1,40 @@
+# Этот файл подключается из http {} (include sites-enabled/*), поэтому map
+# здесь на своём месте — на уровне server он был бы синтаксической ошибкой.
+#
+# Заголовок Connection раньше был жёстко прибит к "upgrade" и уходил на каждом
+# запросе, а не только на WebSocket-рукопожатии. Для обычного HTTP это означало
+# закрытие соединения с upstream после каждого ответа: keep-alive не работал
+# вовсе, и каждый запрос к странице стоил лишнего TCP-хендшейка до web:3000.
+#
+# Имя переменной с префиксом: базовый образ Nginx UI может объявлять свой
+# $connection_upgrade, а повторный map с тем же именем — фатальная ошибка старта.
+map $http_upgrade $hizhina_connection_upgrade {
+  default upgrade;
+  ''      close;
+}
+
 server {
   listen 80;
   listen [::]:80;
   server_name hizhina-sakhalin.ru www.hizhina-sakhalin.ru;
 
-  client_max_body_size 50m;
+  # Сайт не принимает загрузок: форм с файлами на нём нет вовсе, заявки уходят
+  # в мессенджер. 50m имеет смысл только на vhost CMS (ниже), где грузят фото.
+  client_max_body_size 1m;
+
+  gzip on;
+  gzip_proxied any;
+  gzip_comp_level 5;
+  gzip_min_length 1024;
+  gzip_vary on;
+  gzip_types
+    text/plain
+    text/css
+    text/javascript
+    application/javascript
+    application/json
+    application/manifest+json
+    image/svg+xml;
 
   location / {
     proxy_pass http://web:3000;
@@ -13,7 +44,7 @@ server {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
+    proxy_set_header Connection $hizhina_connection_upgrade;
   }
 }
 
@@ -22,6 +53,7 @@ server {
   listen [::]:80;
   server_name cms.hizhina-sakhalin.ru;
 
+  # Через этот vhost заказчица грузит фотографии в Directus — здесь лимит нужен.
   client_max_body_size 50m;
 
   location / {
@@ -32,6 +64,6 @@ server {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
+    proxy_set_header Connection $hizhina_connection_upgrade;
   }
 }

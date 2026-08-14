@@ -30,10 +30,20 @@ export function CabinGallery({
   images,
   alt,
   labels,
+  priority = false,
 }: {
   images: MediaSource[];
   alt: string;
   labels: Labels;
+  /**
+   * Только для галереи, попадающей в первый экран.
+   *
+   * По умолчанию выключено, и это важно: компонент стоит на странице до
+   * четырёх раз (домики плюс три услуги), все — ниже сгиба. Безусловный
+   * priority означал четыре <link rel=preload> с fetchpriority=high,
+   * соревнующихся за канал с настоящим LCP-элементом — фоном первого экрана.
+   */
+  priority?: boolean;
 }) {
   const [index, setIndex] = useState(0);
   const thumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -84,7 +94,7 @@ export function CabinGallery({
             alt={current.alt ?? alt}
             fill
             sizes="(min-width: 1024px) 55vw, 100vw"
-            priority={index === 0}
+            priority={priority && index === 0}
             placeholder={current.blurDataURL ? 'blur' : 'empty'}
             blurDataURL={current.blurDataURL}
             className="animate-fade-in object-cover"

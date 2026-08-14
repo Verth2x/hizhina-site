@@ -50,14 +50,16 @@ export function MobileCtaBar({
       <BookingButton block placement="mobile-bar">
         {messages.actions.book}
       </BookingButton>
-      <Button asChild variant="ghost" size="icon" aria-label={messages.popup.phone}>
-        <a
-          href={settings.phoneHref}
-          onClick={() => track(GOALS.phoneClick, { placement: 'mobile-bar' })}
-        >
-          <Phone size={20} strokeWidth={1.5} aria-hidden="true" />
-        </a>
-      </Button>
+      {settings.phoneHref ? (
+        <Button asChild variant="ghost" size="icon" aria-label={messages.popup.phone}>
+          <a
+            href={settings.phoneHref}
+            onClick={() => track(GOALS.phoneClick, { placement: 'mobile-bar' })}
+          >
+            <Phone size={20} strokeWidth={1.5} aria-hidden="true" />
+          </a>
+        </Button>
+      ) : null}
     </div>
   );
 }

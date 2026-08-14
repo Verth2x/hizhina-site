@@ -6,15 +6,18 @@ import { GOALS } from '@/lib/analytics/goals';
 import type { SiteSettings } from '@/lib/content/types';
 import { buildMapsUrl, buildRouteUrl, MAP_EMBED_URL, shortAddress } from '@/lib/utils/maps';
 
+/** Ничего не рендерит без адреса: кружок-иконка без ссылки — ловушка для пальца. */
 function Social({
   href,
   label,
   children,
 }: {
-  href: string;
+  href?: string;
   label: string;
   children: React.ReactNode;
 }) {
+  if (!href) return null;
+
   return (
     <a
       href={href}
@@ -76,7 +79,9 @@ export function Contacts({ settings, messages }: { settings: SiteSettings; messa
   const lines: { label: string; value: React.ReactNode }[] = [
     {
       label: messages.popup.phone,
-      value: (
+      // Без tel:-ссылки номер остаётся текстом: его всё ещё можно прочесть
+      // и набрать руками, а подчёркнутая «ссылка» в никуда только сбивает.
+      value: settings.phoneHref ? (
         <TrackedLink
           href={settings.phoneHref}
           goal={GOALS.phoneClick}
@@ -85,6 +90,8 @@ export function Contacts({ settings, messages }: { settings: SiteSettings; messa
         >
           {settings.phone}
         </TrackedLink>
+      ) : (
+        settings.phone
       ),
     },
     {
@@ -154,7 +161,13 @@ export function Contacts({ settings, messages }: { settings: SiteSettings; messa
               src={MAP_EMBED_URL}
               title={messages.sections.mapTitle + ' — ' + settings.address}
               loading="lazy"
-              sandbox="allow-modals allow-forms allow-scripts allow-same-origin allow-popups allow-top-navigation-by-user-activation"
+              // Виджету карты нужны скрипты, свой origin (иначе не работает
+              // его собственное хранилище) и открытие 2ГИС в новой вкладке.
+              // Убраны allow-forms, allow-modals и, главное,
+              // allow-top-navigation-by-user-activation: последний позволял
+              // фрейму увести с сайта верхнее окно.
+              sandbox="allow-scripts allow-same-origin allow-popups"
+              referrerPolicy="no-referrer"
               className="absolute inset-0 h-full w-full border-0"
             />
 

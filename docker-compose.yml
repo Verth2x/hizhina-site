@@ -15,8 +15,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    security_opt:
+      - no-new-privileges:true
+    # Только data: до базы дотягивается один Directus. Раньше db стояла
+    # в общей сети, то есть Postgres был виден и с web, и с nginx — притом
+    # что обращается к нему ровно один сервис.
     networks:
-      - internal
+      - data
 
   directus:
     image: directus/directus:11.5.1
@@ -55,8 +60,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    # data — чтобы ходить в Postgres, edge — чтобы его видели nginx и web.
     networks:
-      - internal
+      - data
+      - edge
 
   web:
     build:
@@ -73,12 +82,15 @@ services:
         # pnpm install), поэтому здесь — тот же DIRECTUS_URL, что в .env для
         # bootstrap/seed (см. .env.example), а не внутренний хост.
         DIRECTUS_URL: ${DIRECTUS_URL:-http://directus:8055}
-        DIRECTUS_TOKEN: ${DIRECTUS_TOKEN:-}
         # Подстраховка на случай, если DIRECTUS_URL/TOKEN не заданы (самый
         # первый bootstrap) или CMS всё же недоступна на этапе билда —
         # тогда просто соберётся TS-фолбэк, как раньше, без падения сборки.
         CONTENT_FALLBACK: static
         APP_ENV: ${APP_ENV:-production}
+      # Токен уходит в сборку секретом, а не build-arg: ARG со значением
+      # остаётся в `docker history` промежуточного образа. См. Dockerfile.
+      secrets:
+        - directus_token
     restart: unless-stopped
     ports:
       - "${WEB_PUBLISH:-3000}:3000"
@@ -93,8 +105,31 @@ services:
       NEXT_PUBLIC_IMAGE_PROTOCOL: ${NEXT_PUBLIC_IMAGE_PROTOCOL:-}
     depends_on:
       - directus
+    security_opt:
+      - no-new-privileges:true
+    # Единственный сервис, которому можно снять все capabilities без оговорок:
+    # это `node server.js` от непривилегированного uid 1001 на порту 3000 —
+    # ни привязки к привилегированному порту, ни смены пользователя на старте.
+    cap_drop:
+      - ALL
+    # Проверка живости для `docker compose ps`: сам Next не логирует готовность
+    # так, чтобы это было видно снаружи. depends_on у nginx намеренно оставлен
+    # мягким (service_started): если web не поднимется, шлюз всё равно должен
+    # стартовать и отдавать CMS, через которую правят контент.
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/ru').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     networks:
-      - internal
+      - edge
 
   # Gateway runs with Nginx UI; proxy sites are seeded by nginx-ui.Dockerfile.
   nginx:
@@ -108,15 +143,36 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "9000:9000"
+      # Админка Nginx UI — только на loopback. Раньше она слушала на всех
+      # интерфейсах по обычному HTTP: панель управления всеми сайтами и
+      # сертификатами сервера, с формой входа, открытой в интернет и не
+      # закрытой TLS. Доступ теперь через SSH-туннель:
+      #   ssh -L 9000:127.0.0.1:9000 user@server → http://localhost:9000
+      # (docker-compose.prod.yml сбрасывает порты web и directus, но этот —
+      # нет, поэтому правка нужна именно здесь.)
+      - "127.0.0.1:9000:9000"
     volumes:
       - nginx_config:/etc/nginx
       - nginx_ui_data:/etc/nginx-ui
     depends_on:
       - web
       - directus
+    security_opt:
+      - no-new-privileges:true
+    # cap_drop здесь сознательно нет: nginx привязывается к 80/443 и роняет
+    # привилегии воркеров сам, поэтому ему нужны NET_BIND_SERVICE, SETUID,
+    # SETGID и CHOWN. Отнимать всё и возвращать их списком — тот же набор,
+    # только с риском промахнуться. То же соображение для db и directus.
     networks:
-      - internal
+      - edge
+
+# Значение берётся из переменной окружения DIRECTUS_TOKEN — той же, что уже
+# лежит в .env. Требует Docker Compose v2.20+ (источник `environment` у секретов).
+# Если переменная пуста, секрет приходит пустым и сборка уходит на
+# CONTENT_FALLBACK=static — то же поведение, что и раньше при недоступной CMS.
+secrets:
+  directus_token:
+    environment: DIRECTUS_TOKEN
 
 volumes:
   pgdata:
@@ -126,5 +182,9 @@ volumes:
   nginx_ui_data:
 
 networks:
-  internal:
+  # Периметр: nginx ↔ web ↔ directus.
+  edge:
+    driver: bridge
+  # Только Postgres и Directus. Сюда не входят ни web, ни шлюз.
+  data:
     driver: bridge

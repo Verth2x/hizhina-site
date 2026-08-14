@@ -52,13 +52,21 @@ const csp = [
   "form-action 'self'",
   "script-src 'self' 'unsafe-inline' https://mc.yandex.ru https://yastatic.net",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://mc.yandex.ru" +
+  // blob: убран из img-src и media-src: в src/ нет ни одного createObjectURL,
+  // то есть схема ничего не разрешала по делу, зато оставалась удобным
+  // каналом выноса содержимого при XSS.
+  "img-src 'self' data: https://mc.yandex.ru" +
     (imageHost ? ` http://${imageHost} https://${imageHost}` : ""),
-  "media-src 'self' blob:" +
+  "media-src 'self'" +
     (imageHost ? ` http://${imageHost} https://${imageHost}` : ""),
   "font-src 'self' data:",
   "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com",
   "frame-src https://mc.yandex.ru https://makemap.2gis.ru",
+  // Явный запрет вместо молчаливого отката на default-src.
+  // child-src здесь сознательно нет: он был бы фолбэком для frame-src,
+  // который уже задан выше, и в браузере без поддержки frame-src запретил бы
+  // виджет 2ГИС. Пользы ноль, риск ненулевой.
+  "worker-src 'none'",
   "manifest-src 'self'",
   ...(usesHttps ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
@@ -88,6 +96,15 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: imageHostPatterns(),
+    /**
+     * 30 дней вместо дефолтной минуты.
+     *
+     * Ассеты Directus адресуются неизменяемым UUID: заменённое в CMS фото
+     * получает новый id, то есть новый URL. Инвалидировать по времени нечего,
+     * а дефолт заставлял сервер заново кодировать в AVIF/WebP одни и те же
+     * файлы каждую минуту — самая дорогая операция на этом сайте.
+     */
+    minimumCacheTTL: 2592000,
   },
 
   async redirects() {

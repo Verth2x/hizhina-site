@@ -73,14 +73,16 @@ export function Header({
 
         <div className="flex items-center gap-3">
           <LangSwitcher current={locale} label={messages.common.langSwitch} />
-          <a
-            href={settings.phoneHref}
-            onClick={() => track(GOALS.phoneClick, { placement: 'header' })}
-            className="text-small text-text-secondary hover:text-text-primary hidden items-center gap-2 md:flex"
-          >
-            <Phone size={16} strokeWidth={1.5} aria-hidden="true" />
-            {settings.phone}
-          </a>
+          {settings.phoneHref ? (
+            <a
+              href={settings.phoneHref}
+              onClick={() => track(GOALS.phoneClick, { placement: 'header' })}
+              className="text-small text-text-secondary hover:text-text-primary hidden items-center gap-2 md:flex"
+            >
+              <Phone size={16} strokeWidth={1.5} aria-hidden="true" />
+              {settings.phone}
+            </a>
+          ) : null}
           <BookingButton placement="header" className="hidden md:inline-flex">
             {messages.actions.book}
           </BookingButton>

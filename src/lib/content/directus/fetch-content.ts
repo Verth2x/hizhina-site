@@ -15,31 +15,54 @@ import {
   type DirectusSettings,
 } from './map';
 
-const fileFields = '*,hero_image.id,hero_image.title,hero_image.description,hero_video_poster.id,hero_video_poster.title,hero_video_poster.description,about_image.id,about_image.title,about_image.description';
+/**
+ * Раскрытие связанного файла: сам id плюс подписи, из которых берётся alt.
+ *
+ * Перечислять поля коллекций поимённо вместо `*` заманчиво, но неприменимо:
+ * фактическая схема в Directus разошлась с scripts/bootstrap-directus.mjs
+ * (галерея переехала на M2M, у services появился gallery), а Directus отвечает
+ * ошибкой на весь запрос, если в fields попало несуществующее поле. `*` здесь —
+ * не небрежность, а устойчивость к дрейфу схемы.
+ */
+const fileSubfields = (field: string) => `${field}.id,${field}.title,${field}.description`;
+
+/** Файловые поля страницы: обложка героя, постер видео, картинка «о нас». */
+const pageFields = [
+  '*',
+  fileSubfields('hero_image'),
+  fileSubfields('hero_video_poster'),
+  fileSubfields('about_image'),
+].join(',');
+
+/** Одиночная картинка плюс галерея через junction-таблицу — общее у домиков и услуг. */
+const withGalleryFields = [
+  '*',
+  fileSubfields('image'),
+  fileSubfields('gallery.directus_files_id'),
+].join(',');
 
 export function isDirectusConfigured(): boolean {
   return Boolean(getDirectusUrl() && getDirectusToken());
 }
 
 export async function fetchSiteContentFromDirectus(locale: Locale): Promise<SiteContent> {
+  const published = `filter[locale][_eq]=${locale}&filter[status][_eq]=published`;
+
   const [settings, pages, cabins, services, extras] = await Promise.all([
     directusGetItem<DirectusSettings>('settings'),
     directusGetItems<DirectusPage>(
       'pages',
-      `filter[locale][_eq]=${locale}&filter[status][_eq]=published&fields=${encodeURIComponent(fileFields)}&limit=1`,
+      `${published}&fields=${encodeURIComponent(pageFields)}&limit=1`,
     ),
     directusGetItems<DirectusCabin>(
       'cabins',
-      `filter[locale][_eq]=${locale}&filter[status][_eq]=published&sort=sort&fields=*,image.id,image.title,image.description,gallery.directus_files_id.id,gallery.directus_files_id.title,gallery.directus_files_id.description`,
+      `${published}&sort=sort&fields=${encodeURIComponent(withGalleryFields)}`,
     ),
     directusGetItems<DirectusService>(
       'services',
-      `filter[locale][_eq]=${locale}&filter[status][_eq]=published&sort=sort&fields=*,image.id,image.title,image.description,gallery.directus_files_id.id,gallery.directus_files_id.title,gallery.directus_files_id.description`,
+      `${published}&sort=sort&fields=${encodeURIComponent(withGalleryFields)}`,
     ),
-    directusGetItems<DirectusExtra>(
-      'extras',
-      `filter[locale][_eq]=${locale}&filter[status][_eq]=published&sort=sort`,
-    ),
+    directusGetItems<DirectusExtra>('extras', `${published}&sort=sort`),
   ]);
 
   const page = pages[0];

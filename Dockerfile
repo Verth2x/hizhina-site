@@ -17,7 +17,6 @@ ARG NEXT_PUBLIC_IMAGE_HOST=
 ARG NEXT_PUBLIC_IMAGE_PROTOCOL=
 ARG NEXT_PUBLIC_YANDEX_METRICA_ID=
 ARG DIRECTUS_URL=http://directus:8055
-ARG DIRECTUS_TOKEN=
 ARG CONTENT_FALLBACK=static
 ARG APP_ENV=production
 
@@ -28,10 +27,21 @@ ENV NEXT_TELEMETRY_DISABLED=1 \
     NEXT_PUBLIC_IMAGE_PROTOCOL=$NEXT_PUBLIC_IMAGE_PROTOCOL \
     NEXT_PUBLIC_YANDEX_METRICA_ID=$NEXT_PUBLIC_YANDEX_METRICA_ID \
     DIRECTUS_URL=$DIRECTUS_URL \
-    DIRECTUS_TOKEN=$DIRECTUS_TOKEN \
     CONTENT_FALLBACK=$CONTENT_FALLBACK
 
-RUN pnpm build
+# DIRECTUS_TOKEN приходит секретом, а не ARG.
+#
+# ARG со значением остаётся в метаданных промежуточного образа, и `docker
+# history` на машине сборки показывает токен целиком. В финальный образ он
+# не попадал и раньше (стадия runner идёт FROM base), но само хранение
+# долгоживущего токена CMS в истории слоёв — лишнее.
+#
+# Секрет виден только этой команде и не сохраняется ни в одном слое.
+# Если он не передан, файла нет, DIRECTUS_TOKEN остаётся пустым, и сборка
+# уходит на CONTENT_FALLBACK=static — ровно как при первом bootstrap.
+RUN --mount=type=secret,id=directus_token \
+    DIRECTUS_TOKEN="$(cat /run/secrets/directus_token 2>/dev/null || true)" \
+    pnpm build
 
 FROM base AS runner
 ENV NODE_ENV=production \

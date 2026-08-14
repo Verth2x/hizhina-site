@@ -74,12 +74,19 @@ export type SiteSettings = {
   legalAddress: string;
 
   phone: string;
-  phoneHref: string;
+  /**
+   * Ссылки ниже проходят белый список схем при маппинге (см. `safeUrl`),
+   * поэтому они опциональны: адрес с неразрешённой схемой отбрасывается,
+   * и место подстановки обязано это учесть. Ни одна из них не является
+   * единственным способом связаться, так что пропуск ссылки допустим,
+   * а `javascript:` в разметке — нет.
+   */
+  phoneHref?: string;
   email: string;
 
-  telegramBot: string;
-  whatsapp: string;
-  vk: string;
+  telegramBot?: string;
+  whatsapp?: string;
+  vk?: string;
 
   /** Фактический адрес базы отдыха — то, что гость вбивает в навигатор. */
   address: string;

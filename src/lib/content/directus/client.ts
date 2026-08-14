@@ -1,5 +1,17 @@
 const CONTENT_TAG = 'site-content';
 
+/**
+ * Directus зовёт /api/revalidate на каждую правку (directus/flows/revalidate.md),
+ * поэтому фоновое протухание — не основной путь инвалидации, а страховка на
+ * случай, если Flow отключили или webhook не дошёл. Прежние 60 секунд означали
+ * пять запросов к CMS в минуту на локаль ради контента, который меняется
+ * несколько раз в год.
+ */
+const CONTENT_REVALIDATE_SECONDS = 3600;
+
+/** Столько ждём CMS, прежде чем считать её недоступной. */
+const REQUEST_TIMEOUT_MS = 5000;
+
 export function getDirectusUrl(): string | undefined {
   const url = process.env.DIRECTUS_URL?.trim();
   return url ? url.replace(/\/+$/, '') : undefined;
@@ -26,9 +38,17 @@ export async function directusFetch<T>(path: string, init?: FetchInit): Promise<
     throw new Error('DIRECTUS_TOKEN не задан');
   }
 
-  const url = path.startsWith('http') ? path : `${base}${path.startsWith('/') ? path : `/${path}`}`;
+  // Путь всегда относительный. Раньше строка, начинающаяся с http, уходила
+  // в fetch как есть — заготовленный SSRF на случай, если путь однажды
+  // придёт снаружи. Ни один вызов такой формой не пользовался.
+  const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
+
   const res = await fetch(url, {
     ...init,
+    // Без таймаута зависший Directus держит рендер страницы столько, сколько
+    // готов ждать сокет, и с CONTENT_FALLBACK=static переход на статику тоже
+    // не случается — падать нужно быстро и предсказуемо.
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -36,14 +56,17 @@ export async function directusFetch<T>(path: string, init?: FetchInit): Promise<
     },
     next: {
       tags: [CONTENT_TAG],
-      revalidate: 60,
+      revalidate: CONTENT_REVALIDATE_SECONDS,
       ...(init?.next ?? {}),
     },
   });
 
   if (!res.ok) {
+    // Тело ответа — в лог, но не в текст ошибки: сообщение доезжает до
+    // страницы ошибки и до digest, а Directus кладёт в тело подробности схемы.
     const body = await res.text().catch(() => '');
-    throw new Error(`Directus ${res.status} ${path}: ${body.slice(0, 400)}`);
+    console.error(`[directus] ${res.status} ${path}`, body.slice(0, 400));
+    throw new Error(`Directus ${res.status} ${path}`);
   }
 
   return res.json() as Promise<T>;

@@ -20,8 +20,13 @@ export function ContactPopup({
   const { isOpen, close, subject, placement } = useBooking();
   const t = messages.popup;
 
-  const botUrl = telegramBookingUrl(settings.telegramBot, subject);
-  const botAppUrl = telegramAppUrl(settings.telegramBot, subject);
+  // Адрес бота проходит проверку схемы при маппинге и может её не пережить,
+  // если в CMS записали что-то постороннее. Тогда кнопки Telegram просто нет:
+  // мёртвая главная кнопка в попапе брони хуже, чем три оставшихся канала.
+  const botUrl = settings.telegramBot
+    ? telegramBookingUrl(settings.telegramBot, subject)
+    : undefined;
+  const botAppUrl = settings.telegramBot ? telegramAppUrl(settings.telegramBot, subject) : null;
 
   // Заявка уходит в мессенджер, то есть за пределы сайта. Клик по каналу —
   // последняя точка, где мы вообще видим пользователя, поэтому без этого
@@ -49,6 +54,7 @@ export function ContactPopup({
       ) : null}
 
       <div className="flex flex-col gap-3">
+        {botUrl ? (
         <Button asChild size="lg" block>
           <a
             href={botUrl}
@@ -80,36 +86,47 @@ export function ContactPopup({
             </span>
           </a>
         </Button>
+        ) : null}
 
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Button asChild variant="ghost" block>
-            <a
-              href={settings.whatsapp}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={channel(GOALS.channelWhatsapp)}
-            >
-              <MessageCircle size={20} strokeWidth={1.5} aria-hidden="true" />
-              {t.whatsapp}
-            </a>
-          </Button>
-          <Button asChild variant="ghost" block>
-            <a href={settings.phoneHref} onClick={channel(GOALS.channelPhone)}>
-              <Phone size={20} strokeWidth={1.5} aria-hidden="true" />
-              {t.phone}
-            </a>
-          </Button>
-          <Button asChild variant="ghost" block>
-            <a
-              href={settings.vk}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={channel(GOALS.channelVk)}
-            >
-              <Users size={20} strokeWidth={1.5} aria-hidden="true" />
-              {t.vk}
-            </a>
-          </Button>
+        {/*
+          Колонок ровно столько, сколько каналов уцелело после проверки схем:
+          жёсткий grid-cols-3 оставлял бы дыру на месте отброшенной ссылки.
+        */}
+        <div className="grid auto-cols-fr gap-3 sm:grid-flow-col">
+          {settings.whatsapp ? (
+            <Button asChild variant="ghost" block>
+              <a
+                href={settings.whatsapp}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={channel(GOALS.channelWhatsapp)}
+              >
+                <MessageCircle size={20} strokeWidth={1.5} aria-hidden="true" />
+                {t.whatsapp}
+              </a>
+            </Button>
+          ) : null}
+          {settings.phoneHref ? (
+            <Button asChild variant="ghost" block>
+              <a href={settings.phoneHref} onClick={channel(GOALS.channelPhone)}>
+                <Phone size={20} strokeWidth={1.5} aria-hidden="true" />
+                {t.phone}
+              </a>
+            </Button>
+          ) : null}
+          {settings.vk ? (
+            <Button asChild variant="ghost" block>
+              <a
+                href={settings.vk}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={channel(GOALS.channelVk)}
+              >
+                <Users size={20} strokeWidth={1.5} aria-hidden="true" />
+                {t.vk}
+              </a>
+            </Button>
+          ) : null}
         </div>
       </div>
     </Modal>

@@ -1,4 +1,5 @@
 import type { Locale } from '@/i18n/config';
+import { safeMediaUrl, safeUrl, TEL_SCHEMES } from '@/lib/utils/safe-url';
 import type {
   Cabin,
   Extra,
@@ -86,7 +87,7 @@ export type DirectusExtra = {
   price: number;
 };
 
-function assetBaseUrl(): string {
+function resolveAssetBaseUrl(): string {
   // Публичный URL ассетов для браузера — через IMAGE_HOST или PUBLIC Directus URL.
   const host = process.env.NEXT_PUBLIC_IMAGE_HOST?.trim();
   if (host) {
@@ -99,6 +100,13 @@ function assetBaseUrl(): string {
   );
 }
 
+/**
+ * Считается один раз на модуль, а не на каждую картинку: `mapMedia` вызывается
+ * на каждый кадр каждой галереи, и разбирать одни и те же переменные окружения
+ * заново незачем — в пределах процесса они не меняются.
+ */
+const ASSET_BASE_URL = resolveAssetBaseUrl();
+
 export function mapMedia(
   file: DirectusFile | string | null | undefined,
   fallbackAlt?: string,
@@ -110,7 +118,7 @@ export function mapMedia(
     typeof file === 'string'
       ? fallbackAlt
       : file.description || file.title || fallbackAlt || undefined;
-  return { src: `${assetBaseUrl()}/assets/${id}`, alt };
+  return { src: `${ASSET_BASE_URL}/assets/${id}`, alt };
 }
 
 function mapSettings(row: DirectusSettings): SiteSettings {
@@ -120,11 +128,13 @@ function mapSettings(row: DirectusSettings): SiteSettings {
     ogrnip: row.ogrnip,
     legalAddress: row.legal_address,
     phone: row.phone,
-    phoneHref: row.phone_href,
+    // Всё, что уходит в href, проходит белый список схем: значения задаёт
+    // редактор в CMS, а React пропустил бы `javascript:` прямо в разметку.
+    phoneHref: safeUrl(row.phone_href, TEL_SCHEMES),
     email: row.email,
-    telegramBot: row.telegram_bot,
-    whatsapp: row.whatsapp,
-    vk: row.vk,
+    telegramBot: safeUrl(row.telegram_bot),
+    whatsapp: safeUrl(row.whatsapp),
+    vk: safeUrl(row.vk),
     address: row.address,
     directions: row.directions ?? [],
   };
@@ -192,12 +202,16 @@ function mapExtra(row: DirectusExtra): Extra {
 }
 
 function mapHeroVideo(page: DirectusPage): HeroVideo | undefined {
-  if (!page.hero_video_mp4) return undefined;
+  // Адреса видео тоже из CMS и тоже уходят в атрибут (`<source src>`),
+  // поэтому проходят ту же проверку схемы. Без mp4 видео не существует —
+  // остаётся постер, ради которого он и обязателен (см. types.ts).
+  const mp4 = safeMediaUrl(page.hero_video_mp4);
+  if (!mp4) return undefined;
   const poster = mapMedia(page.hero_video_poster, page.hero_title);
   if (!poster) return undefined;
   return {
-    mp4: page.hero_video_mp4,
-    webm: page.hero_video_webm ?? undefined,
+    mp4,
+    webm: safeMediaUrl(page.hero_video_webm),
     poster,
   };
 }

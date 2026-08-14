@@ -28,9 +28,13 @@ export function Footer({
           </div>
 
           <div className="text-small flex flex-col gap-2">
-            <a href={settings.phoneHref} className="opacity-85 hover:opacity-100">
-              {settings.phone}
-            </a>
+            {settings.phoneHref ? (
+              <a href={settings.phoneHref} className="opacity-85 hover:opacity-100">
+                {settings.phone}
+              </a>
+            ) : (
+              <span className="opacity-85">{settings.phone}</span>
+            )}
             <a href={'mailto:' + settings.email} className="opacity-85 hover:opacity-100">
               {settings.email}
             </a>

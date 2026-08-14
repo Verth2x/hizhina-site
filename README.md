@@ -101,8 +101,14 @@ src/
 ## Хостинг на VDS
 
 Стек целиком в Docker: Postgres, Directus, Next и Nginx UI.
-Минимально: VPS с 2 GB RAM, Ubuntu 22.04+, открытые порты
-`22`, `80`, `443` и `9000` для первичной настройки Nginx UI.
+Минимально: VPS с 2 GB RAM, Ubuntu 22.04+, открытые порты `22`, `80` и `443`.
+
+Панель Nginx UI (`9000`) наружу не публикуется — она слушает только на
+loopback, доступ к ней идёт через SSH-туннель (см. шаг 5).
+
+Сборка образа `web` требует **Docker Compose v2.20+**: `DIRECTUS_TOKEN`
+передаётся в билд секретом (`secrets.directus_token`), а не build-аргументом,
+чтобы не оседать в `docker history` промежуточного образа.
 
 ### 1. Сервер
 
@@ -152,13 +158,22 @@ nano .env   # заменить все CHANGE_ME_*; после bootstrap — DIRE
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
-Поднимутся: `db`, `directus`, `web`, `nginx`. Снаружи открыты `80` и панель Nginx UI на `9000`.
+Поднимутся: `db`, `directus`, `web`, `nginx`. Снаружи открыты только `80` и `443`;
+панель Nginx UI слушает на `127.0.0.1:9000` и в интернет не смотрит.
 
 Проверка: `docker compose ps`, логи — `docker compose logs -f nginx directus web`.
 
 ### 5. Nginx UI
 
-После первого запуска откройте `http://<IP-VDS>:9000/install` и создайте
+Панель published на loopback, поэтому открывается через SSH-туннель с вашей
+машины — форма входа в панель управления всеми сайтами и сертификатами
+сервера не должна висеть в интернете, тем более по обычному HTTP:
+
+```bash
+ssh -L 9000:127.0.0.1:9000 user@<IP-VDS>
+```
+
+Затем на своей машине откройте `http://localhost:9000/install` и создайте
 учётную запись администратора. В **Sites** добавьте два reverse-proxy сайта:
 
 - `hizhina-sakhalin.ru` и `www.hizhina-sakhalin.ru` → `http://web:3000`;
@@ -166,7 +181,6 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 `web` и `directus` — имена сервисов Docker Compose, не `localhost`. В Nginx UI
 можно выпустить Let's Encrypt-сертификат, включить HTTPS и просматривать логи.
-После настройки ограничьте доступ к порту `9000` файрволом только своим IP.
 
 Для `hizhina-sakhalin.ru` и `cms.hizhina-sakhalin.ru` оба proxy-сайта уже
 добавлены в стартовый образ: сайт работает сразу, ещё до первого входа в UI.
@@ -224,6 +238,11 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build we
 
 URL внутренний (`web`), не публичный домен.
 
+Метод только `POST`, секрет только заголовком: `GET` отдаёт `405`, а вариант
+`?secret=…` больше не поддерживается — query-строка оседает в access-логах
+Nginx, в `Referer` и в истории браузера. Сравнение секрета — постоянное по
+времени (`timingSafeEqual`).
+
 ### 8. Проверка
 
 - `https://hizhina-sakhalin.ru` и `/en` открываются (или `http://` до TLS)
@@ -269,3 +288,17 @@ Comfortaa и Nunito — локально в `src/assets/fonts/` (`next/font/loca
 
 CSP, HSTS (при `APP_ENV=production`), `X-Frame-Options: DENY` и др. — в `next.config.ts`.
 `'unsafe-inline'` в script-src — см. `DECISIONS.md` №9.
+
+Directus: CORS выключен (браузер к CMS напрямую не ходит), включён встроенный
+rate-limiter (`RATE_LIMITER_*`), cookie сессии/refresh — только по HTTPS
+(`SESSION_COOKIE_SECURE`, `REFRESH_TOKEN_COOKIE_SECURE`) — см. `docker-compose.yml`.
+
+На гейтвее (конфиг живёт в volume Nginx UI, не в репозитории — правится
+только через панель, доступную по SSH-туннелю) для обоих доменов настроены: редирект
+HTTP → HTTPS, `client_max_body_size 50m`, `ssl_protocols TLSv1.2 TLSv1.3`.
+Для `cms.hizhina-sakhalin.ru` отдельно: security-заголовки
+(`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) — Directus
+их сам не отдаёт, в отличие от сайта.
+
+Логин в CMS — `DIRECTUS_ADMIN_EMAIL` / `DIRECTUS_ADMIN_PASSWORD` в `.env` на
+сервере.
