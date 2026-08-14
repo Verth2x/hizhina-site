@@ -1,0 +1,82 @@
+# CMS: cms.hizhina-sakhalin.ru → directus:8055
+#
+# Directus поднят с WEBSOCKETS_ENABLED=true, поэтому апгрейд соединения ему
+# нужен по-настоящему — в отличие от сайта, где он был скопирован по инерции.
+# map отдаёт `upgrade` только на самом рукопожатии, а на обычных запросах —
+# `close`, не ломая keepalive до upstream.
+#
+# Имя переменной с префиксом cms_: базовый образ Nginx UI может объявлять
+# свой $connection_upgrade, а повторный map с тем же именем — фатальная
+# ошибка старта.
+map $http_upgrade $cms_connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+upstream cms_directus {
+    server directus:8055;
+    keepalive 16;
+}
+
+# Блока :80 в живом конфиге не было — http://cms… попадал на default server.
+# Повторяет проверенную схему сайта: сначала ACME, потом редирект на TLS.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name cms.hizhina-sakhalin.ru;
+
+    location ~ /.well-known/acme-challenge {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr:$remote_port;
+        proxy_pass http://127.0.0.1:9180;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name cms.hizhina-sakhalin.ru;
+
+    ssl_certificate /etc/nginx/ssl/cms.hizhina-sakhalin.ru_EC256/fullchain.cer;
+    ssl_certificate_key /etc/nginx/ssl/cms.hizhina-sakhalin.ru_EC256/private.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+
+    # Загрузка фотографий в медиатеку Directus.
+    client_max_body_size 50m;
+
+    # Directus эти заголовки сам не отдаёт, в отличие от сайта, где их
+    # проставляет next.config.ts.
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+    location ~ /.well-known/acme-challenge {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr:$remote_port;
+        proxy_pass http://127.0.0.1:9180;
+    }
+
+    # Отдельный location /admin в живом конфиге дублировал location / слово
+    # в слово. Оставлен один общий блок: /admin — обычный путь Directus,
+    # и разводить их незачем, пока правила для них не разошлись.
+    location / {
+        proxy_pass http://cms_directus;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $cms_connection_upgrade;
+    }
+}

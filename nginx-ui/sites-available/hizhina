@@ -1,69 +1,86 @@
-# Этот файл подключается из http {} (include sites-enabled/*), поэтому map
-# здесь на своём месте — на уровне server он был бы синтаксической ошибкой.
+# Сайт: hizhina-sakhalin.ru + www → web:3000
 #
-# Заголовок Connection раньше был жёстко прибит к "upgrade" и уходил на каждом
-# запросе, а не только на WebSocket-рукопожатии. Для обычного HTTP это означало
-# закрытие соединения с upstream после каждого ответа: keep-alive не работал
-# вовсе, и каждый запрос к странице стоил лишнего TCP-хендшейка до web:3000.
+# Файл подключается из http {} (include sites-enabled/*), поэтому upstream
+# здесь на своём месте — внутри server он был бы синтаксической ошибкой.
 #
-# Имя переменной с префиксом: базовый образ Nginx UI может объявлять свой
-# $connection_upgrade, а повторный map с тем же именем — фатальная ошибка старта.
-map $http_upgrade $hizhina_connection_upgrade {
-  default upgrade;
-  ''      close;
+# Имя upstream уникально для этого файла и нигде больше не используется:
+# два одинаковых upstream в разных подключённых файлах — фатальная ошибка
+# старта nginx. По той же причине в cms свой отдельный набор имён.
+upstream hizhina_web {
+    server web:3000;
+    # Пул постоянных соединений до Next. Раньше на каждый запрос уходил
+    # заголовок `Connection: upgrade` (не только на WebSocket-рукопожатии),
+    # из-за чего соединение закрывалось после каждого ответа и каждая
+    # страница стоила лишнего TCP-хендшейка.
+    keepalive 32;
 }
 
 server {
-  listen 80;
-  listen [::]:80;
-  server_name hizhina-sakhalin.ru www.hizhina-sakhalin.ru;
+    listen 80;
+    listen [::]:80;
+    server_name hizhina-sakhalin.ru www.hizhina-sakhalin.ru;
 
-  # Сайт не принимает загрузок: форм с файлами на нём нет вовсе, заявки уходят
-  # в мессенджер. 50m имеет смысл только на vhost CMS (ниже), где грузят фото.
-  client_max_body_size 1m;
+    location ~ /.well-known/acme-challenge {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr:$remote_port;
+        proxy_pass http://127.0.0.1:9180;
+    }
 
-  gzip on;
-  gzip_proxied any;
-  gzip_comp_level 5;
-  gzip_min_length 1024;
-  gzip_vary on;
-  gzip_types
-    text/plain
-    text/css
-    text/javascript
-    application/javascript
-    application/json
-    application/manifest+json
-    image/svg+xml;
-
-  location / {
-    proxy_pass http://web:3000;
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection $hizhina_connection_upgrade;
-  }
+    location / {
+        return 301 https://$host$request_uri;
+    }
 }
 
 server {
-  listen 80;
-  listen [::]:80;
-  server_name cms.hizhina-sakhalin.ru;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name hizhina-sakhalin.ru www.hizhina-sakhalin.ru;
 
-  # Через этот vhost заказчица грузит фотографии в Directus — здесь лимит нужен.
-  client_max_body_size 50m;
+    ssl_certificate /etc/nginx/ssl/hizhina-sakhalin.ru_www.hizhina-sakhalin.ru_EC256/fullchain.cer;
+    ssl_certificate_key /etc/nginx/ssl/hizhina-sakhalin.ru_www.hizhina-sakhalin.ru_EC256/private.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
 
-  location / {
-    proxy_pass http://directus:8055;
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection $hizhina_connection_upgrade;
-  }
+    # Сайт не принимает загрузок: форм с файлами нет, заявки уходят в
+    # мессенджер. 50m нужны только на vhost CMS, где заказчица грузит фото.
+    client_max_body_size 1m;
+
+    # Ни Next standalone, ни nginx по умолчанию не сжимают ответы.
+    gzip on;
+    gzip_proxied any;
+    gzip_comp_level 5;
+    gzip_min_length 1024;
+    gzip_vary on;
+    gzip_types
+        text/plain
+        text/css
+        text/javascript
+        application/javascript
+        application/json
+        application/manifest+json
+        image/svg+xml;
+
+    location ~ /.well-known/acme-challenge {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr:$remote_port;
+        proxy_pass http://127.0.0.1:9180;
+    }
+
+    location / {
+        proxy_pass http://hizhina_web;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # Пустой Connection — обязательное условие для keepalive в upstream.
+        # Проброс Upgrade здесь убран сознательно: в проде Next standalone
+        # WebSocket не использует (HMR живёт только в dev-сервере).
+        proxy_set_header Connection "";
+    }
 }

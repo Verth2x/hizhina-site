@@ -181,12 +181,21 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 Проверка Docker socket в UI отключена: этот стек не передаёт панели доступ к
 Docker Engine, поскольку ей не нужно управлять другими контейнерами.
 
-Если Nginx UI был запущен до появления стартового сайта, добавьте его в уже
-созданный volume без удаления настроек:
+Volume `nginx_config` засеивается из образа **только когда он пуст**. На уже
+работающем сервере правки в `nginx-ui/sites-available/` сами не подхватятся —
+их нужно перенести в существующий volume вручную, не удаляя настроек:
 
 ```bash
-docker compose exec nginx sh -c 'cp /usr/local/etc/nginx/sites-available/hizhina /etc/nginx/sites-available/hizhina && ln -sf ../sites-available/hizhina /etc/nginx/sites-enabled/hizhina && nginx -t && nginx -s reload'
+docker compose exec nginx sh -c 'for s in hizhina cms; do cp "/usr/local/etc/nginx/sites-available/$s" "/etc/nginx/sites-available/$s"; ln -sf "../sites-available/$s" "/etc/nginx/sites-enabled/$s"; done; nginx -t && nginx -s reload'
 ```
+
+`nginx -t` перед `reload` не случаен: при ошибке в конфиге перезагрузка не
+произойдёт и текущий рабочий nginx продолжит отдавать сайт.
+
+Сертификаты выпускаются через панель и живут в volume, поэтому пути
+`ssl_certificate` в засеянных конфигах предполагают уже выпущенный
+Let's Encrypt-сертификат. До первого выпуска блоки `443` работать не будут —
+поднимайте сайт по HTTP, выпускайте сертификат в UI, затем применяйте конфиги.
 
 До TLS сайт работает по HTTP :80. После включения HTTPS укажите `https://` в
 `NEXT_PUBLIC_SITE_URL` и `DIRECTUS_PUBLIC_URL`, задайте
