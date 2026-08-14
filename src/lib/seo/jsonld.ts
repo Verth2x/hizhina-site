@@ -1,4 +1,20 @@
 import type { SiteContent } from '@/lib/content/types';
+import { absoluteUrl } from '@/lib/site';
+
+/**
+ * Фото для карточки в поиске. Тот же приоритет, что у фона первого экрана
+ * (см. `Hero`): постер видео главнее статичной картинки. Без него Google
+ * не показывает расширенный сниппет для LodgingBusiness.
+ */
+function representativeImage(content: SiteContent): string | undefined {
+  const src =
+    content.hero.video?.poster.src ??
+    content.hero.image?.src ??
+    content.about.image?.src ??
+    content.cabins[0]?.image?.src;
+  if (!src) return undefined;
+  return src.startsWith('http') ? src : absoluteUrl(src);
+}
 
 /**
  * Микроразметка LodgingBusiness. Для загородного объекта это единственный
@@ -8,6 +24,7 @@ import type { SiteContent } from '@/lib/content/types';
  */
 export function lodgingJsonLd(content: SiteContent, url: string) {
   const { settings, brand } = content;
+  const image = representativeImage(content);
 
   return {
     '@context': 'https://schema.org',
@@ -17,6 +34,7 @@ export function lodgingJsonLd(content: SiteContent, url: string) {
     alternateName: brand.wordmark,
     description: content.about.body[0],
     url,
+    ...(image ? { image } : {}),
     telephone: settings.phone,
     email: settings.email,
     address: {
