@@ -31,7 +31,14 @@ export function ServiceSection({
       )}
     >
       <div className="max-w-main gutter mx-auto grid items-center gap-10 md:grid-cols-2 lg:items-stretch">
-        <div className={cn('lg:py-3', mediaSide === 'right' && 'md:order-2')}>
+        {/*
+          min-w-0 обязателен: это grid-элемент, а у них min-width по умолчанию
+          auto, то есть min-content. Дорожка миниатюр внутри галереи шире
+          экрана, и без сброса колонка растягивалась под неё — блок вылезал
+          за левую сетку страницы. У домиков сброс живёт внутри CabinGallery,
+          здесь между сеткой и галереей есть лишняя обёртка.
+        */}
+        <div className={cn('min-w-0 lg:py-3', mediaSide === 'right' && 'md:order-2')}>
           {service.gallery && service.gallery.length > 0 ? (
             // Несколько фото — карусель. Компонент общий с домиками,
             // название историческое.
@@ -57,7 +64,7 @@ export function ServiceSection({
           )}
         </div>
 
-        <div className="lg:self-center">
+        <div className="min-w-0 lg:self-center">
           <h2 className={cn('text-h1', dark ? 'text-text-inverse' : 'text-text-primary')}>
             {service.name}
           </h2>
