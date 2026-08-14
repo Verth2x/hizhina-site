@@ -2,7 +2,7 @@ import type { GeoPoint } from '@/lib/content/types';
 
 /** Встраиваемый виджет 2ГИС с меткой базы — сгенерирован в конструкторе 2ГИС. */
 export const MAP_EMBED_URL =
-  'https://makemap.2gis.ru/widget?data=eJw1kFFvgjAUhf9L9yhxrVRISXwgNVOXjsBeFrf4wGyHzSolpeiU-N93wa2P_c45957bI-ukckqulD0q77RqUfLRI39pFErQkyp95xQKUONso5wfeY_21lgH_KGM5mo2cK-9GRz4eV20GQ-xSCss4tfKc4y3p9eD5OcNF0UjOcXis-gyzkCjwSpVu3e68drWEJCv0wkWL90m490gPEk-EZIfsFiOIVic7ubtuuj0GYY8Fl6uUqGXhcmAb7_AsxJYfLeQgYVOac7ZOa8WCxh23dRS_aCE4P93C1B1L38Zqv01z62uPej3Fg6k69KPhyF0No0YoySg0ZRFBJNwB34tUTJn-LYL0LFsctvqe5kemdKj5K6lM8bmLCSUxDRAZuBDXAwrhARQHIchgKu1RyAxxMJZrDFvB6XM-_jrXaduv0Aqhag';
+  'https://makemap.2gis.ru/widget?data=eJw1kFFvgjAUhf9L9yhxRaFYEh9IzdSlI-DL4hYfmO2wWaWkFJ0a__su4PrY75xzc84NGSuklWIpzVE6q2SD4s8bcpdaohi9yMK1ViIP1dbU0rqe39DeaGOBPxUklJOOO-V058Cvq7xJ2RTzpMQ82pSOYbw9bQ6CndeM57VgAeZfeZsyChoFViGbvVW1U6aCgGyVjDB_a9cpazvhSbARF-yA-aIPwfw0mLervFVnOPKcO7FMuFrkOgW-_QbPkmP-00AG5ioJMkbPWTmfw7HruhLyF8U-_n93D5VD-UtX7dE8M6pyoN8bGEhVheuH8YPJmFAa-F5AxpT42J_uwK8EikOK7zsPHYs6M40aytyQLhyKB60f-hFcnRFCiYd0xx9xExzOonBKSQTgaswRSASxMIvR-v0gpf7of51t5f0PQdyFuA';
 
 /**
  * Раньше `mapsUrl` был захардкожен как `https://yandex.ru/maps/` — то есть
