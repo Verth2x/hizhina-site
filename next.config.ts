@@ -58,7 +58,7 @@ const csp = [
     (imageHost ? ` http://${imageHost} https://${imageHost}` : ""),
   "font-src 'self' data:",
   "connect-src 'self' https://mc.yandex.ru https://mc.yandex.com",
-  "frame-src https://mc.yandex.ru",
+  "frame-src https://mc.yandex.ru https://makemap.2gis.ru",
   "manifest-src 'self'",
   ...(usesHttps ? ["upgrade-insecure-requests"] : []),
 ].join("; ");

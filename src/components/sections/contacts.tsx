@@ -4,7 +4,7 @@ import { BookingButton } from '@/components/booking/booking-button';
 import type { Messages } from '@/i18n/config';
 import { GOALS } from '@/lib/analytics/goals';
 import type { SiteSettings } from '@/lib/content/types';
-import { buildMapsUrl, buildRouteUrl } from '@/lib/utils/maps';
+import { buildMapsUrl, buildRouteUrl, MAP_EMBED_URL, shortAddress } from '@/lib/utils/maps';
 
 function Social({
   href,
@@ -27,6 +27,44 @@ function Social({
     >
       {children}
     </a>
+  );
+}
+
+function MapLinks({
+  mapsUrl,
+  routeUrl,
+  messages,
+}: {
+  mapsUrl: string;
+  routeUrl: string;
+  messages: Messages;
+}) {
+  return (
+    <div className="flex flex-wrap gap-3">
+      <TrackedLink
+        href={mapsUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        goal={GOALS.mapOpen}
+        params={{ kind: 'map' }}
+        className="border-border-inverse-interactive text-small text-text-inverse hover:border-text-inverse inline-flex items-center gap-1.5 border-b transition-colors"
+      >
+        {messages.actions.showMap}
+        <ArrowUpRight size={12} strokeWidth={1.5} aria-hidden="true" />
+      </TrackedLink>
+
+      <TrackedLink
+        href={routeUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        goal={GOALS.mapOpen}
+        params={{ kind: 'route' }}
+        className="border-border-inverse-interactive text-small text-text-inverse hover:border-text-inverse inline-flex items-center gap-1.5 border-b transition-colors"
+      >
+        {messages.actions.buildRoute}
+        <Route size={12} strokeWidth={1.5} aria-hidden="true" />
+      </TrackedLink>
+    </div>
   );
 }
 
@@ -89,7 +127,7 @@ export function Contacts({ settings, messages }: { settings: SiteSettings; messa
                   12px/0.28em — прописная кириллица на широкой разрядке
                   распадается на буквы.
                 */}
-                <dt className="text-meta uppercase opacity-60">{line.label}</dt>
+                <dt className="text-small uppercase opacity-60">{line.label}</dt>
                 <dd className="mt-1.5 text-lg font-light break-words">{line.value}</dd>
               </div>
             ))}
@@ -111,34 +149,35 @@ export function Contacts({ settings, messages }: { settings: SiteSettings; messa
         </div>
 
         <div className="md:col-span-7">
-          <div className="bg-surface-inverse-raised flex aspect-4/3 flex-col items-center justify-center gap-5 rounded-lg p-6 text-center">
-            <p className="text-small text-text-inverse opacity-80">{settings.address}</p>
+          <div className="relative aspect-4/3 overflow-hidden rounded-lg">
+            <iframe
+              src={MAP_EMBED_URL}
+              title={messages.sections.mapTitle + ' — ' + settings.address}
+              loading="lazy"
+              sandbox="allow-modals allow-forms allow-scripts allow-same-origin allow-popups allow-top-navigation-by-user-activation"
+              className="absolute inset-0 h-full w-full border-0"
+            />
 
-            <div className="flex flex-wrap justify-center gap-4">
-              <TrackedLink
-                href={mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                goal={GOALS.mapOpen}
-                params={{ kind: 'map' }}
-                className="border-border-inverse-interactive text-small text-text-inverse hover:border-text-inverse inline-flex items-center gap-2 border-b transition-colors"
-              >
-                {messages.actions.showMap}
-                <ArrowUpRight size={14} strokeWidth={1.5} aria-hidden="true" />
-              </TrackedLink>
-
-              <TrackedLink
-                href={routeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                goal={GOALS.mapOpen}
-                params={{ kind: 'route' }}
-                className="border-border-inverse-interactive text-small text-text-inverse hover:border-text-inverse inline-flex items-center gap-2 border-b transition-colors"
-              >
-                {messages.actions.buildRoute}
-                <Route size={14} strokeWidth={1.5} aria-hidden="true" />
-              </TrackedLink>
+            {/*
+              hero-panel — тот же приём подложки, что на первом экране: карта
+              под ней светлая в любой теме 2ГИС, тексту нужен гарантированный
+              контраст. Только от sm: на мобильной ширине панель поверх карты
+              закрывала половину виджета, поэтому там адрес и ссылки уходят
+              в отдельный блок под картой (см. ниже).
+            */}
+            <div className="hero-panel absolute inset-x-3 bottom-3 hidden flex-col gap-2.5 rounded-lg p-3.5 sm:flex sm:inset-x-auto sm:max-w-56">
+              <p className="text-small text-text-inverse opacity-80">
+                {shortAddress(settings.address)}
+              </p>
+              <MapLinks mapsUrl={mapsUrl} routeUrl={routeUrl} messages={messages} />
             </div>
+          </div>
+
+          <div className="bg-surface-inverse-raised mt-3 flex flex-col gap-2.5 rounded-lg p-4 sm:hidden">
+            <p className="text-small text-text-inverse opacity-80">
+              {shortAddress(settings.address)}
+            </p>
+            <MapLinks mapsUrl={mapsUrl} routeUrl={routeUrl} messages={messages} />
           </div>
 
           {/*
@@ -148,7 +187,7 @@ export function Contacts({ settings, messages }: { settings: SiteSettings; messa
           */}
           {directions.length > 0 ? (
             <div className="border-border-inverse mt-8 border-t pt-6">
-              <h3 className="text-meta text-text-inverse uppercase opacity-70">
+              <h3 className="text-small text-text-inverse uppercase opacity-70">
                 {messages.sections.directionsTitle}
               </h3>
               <ul className="text-small mt-4 space-y-2 opacity-90">
