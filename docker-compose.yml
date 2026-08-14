@@ -55,16 +55,16 @@ services:
         NEXT_PUBLIC_IMAGE_HOST: ${NEXT_PUBLIC_IMAGE_HOST:-localhost:8055}
         NEXT_PUBLIC_IMAGE_PROTOCOL: ${NEXT_PUBLIC_IMAGE_PROTOCOL:-}
         NEXT_PUBLIC_YANDEX_METRICA_ID: ${NEXT_PUBLIC_YANDEX_METRICA_ID:-}
-        DIRECTUS_URL: http://directus:8055
-        # На проде directus намеренно не публикует порт на хост (см.
-        # docker-compose.prod.yml), а сборка идёт в изолированной от
-        # compose-сети среде buildx — так что достучаться до Directus на
-        # этапе билда здесь нельзя в принципе, DIRECTUS_TOKEN тут не поможет.
-        # Собираем из site-content.ts, а реальный контент из Directus (с
-        # фото) подхватывается автоматически в рантайме через ISR:
-        # каждый fetch в directusFetch() помечен `revalidate: 60`, так что
-        # у уже запущенного контейнера страница сама обновится в течение
-        # ~минуты после первого запроса — без ребилда и без вебхука.
+        # Билд идёт в изолированной от compose-сети среде buildx — внутренний
+        # http://directus:8055 там не резолвится в принципе. А вот публичный
+        # адрес CMS доступен по обычному интернету (как и npm-регистр для
+        # pnpm install), поэтому здесь — тот же DIRECTUS_URL, что в .env для
+        # bootstrap/seed (см. .env.example), а не внутренний хост.
+        DIRECTUS_URL: ${DIRECTUS_URL:-http://directus:8055}
+        DIRECTUS_TOKEN: ${DIRECTUS_TOKEN:-}
+        # Подстраховка на случай, если DIRECTUS_URL/TOKEN не заданы (самый
+        # первый bootstrap) или CMS всё же недоступна на этапе билда —
+        # тогда просто соберётся TS-фолбэк, как раньше, без падения сборки.
         CONTENT_FALLBACK: static
         APP_ENV: ${APP_ENV:-production}
     restart: unless-stopped
