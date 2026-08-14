@@ -101,10 +101,8 @@ src/
 ## Хостинг на VDS
 
 Стек целиком в Docker: Postgres, Directus, Next и Nginx UI.
-Минимально: VPS с 2 GB RAM, Ubuntu 22.04+, открытые порты `22`, `80` и `443`.
-
-Панель Nginx UI (`9000`) наружу не публикуется — она слушает только на
-loopback, доступ к ней идёт через SSH-туннель (см. шаг 5).
+Минимально: VPS с 2 GB RAM, Ubuntu 22.04+, открытые порты
+`22`, `80`, `443` и `9000` для панели Nginx UI.
 
 Сборка образа `web` требует **Docker Compose v2.20+**: `DIRECTUS_TOKEN`
 передаётся в билд секретом (`secrets.directus_token`), а не build-аргументом,
@@ -158,22 +156,14 @@ nano .env   # заменить все CHANGE_ME_*; после bootstrap — DIRE
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
-Поднимутся: `db`, `directus`, `web`, `nginx`. Снаружи открыты только `80` и `443`;
-панель Nginx UI слушает на `127.0.0.1:9000` и в интернет не смотрит.
+Поднимутся: `db`, `directus`, `web`, `nginx`. Снаружи открыты `80`, `443`
+и панель Nginx UI на `9000`.
 
 Проверка: `docker compose ps`, логи — `docker compose logs -f nginx directus web`.
 
 ### 5. Nginx UI
 
-Панель published на loopback, поэтому открывается через SSH-туннель с вашей
-машины — форма входа в панель управления всеми сайтами и сертификатами
-сервера не должна висеть в интернете, тем более по обычному HTTP:
-
-```bash
-ssh -L 9000:127.0.0.1:9000 user@<IP-VDS>
-```
-
-Затем на своей машине откройте `http://localhost:9000/install` и создайте
+После первого запуска откройте `http://<IP-VDS>:9000/install` и создайте
 учётную запись администратора. В **Sites** добавьте два reverse-proxy сайта:
 
 - `hizhina-sakhalin.ru` и `www.hizhina-sakhalin.ru` → `http://web:3000`;
@@ -181,6 +171,10 @@ ssh -L 9000:127.0.0.1:9000 user@<IP-VDS>
 
 `web` и `directus` — имена сервисов Docker Compose, не `localhost`. В Nginx UI
 можно выпустить Let's Encrypt-сертификат, включить HTTPS и просматривать логи.
+
+Панель открыта наружу. Обычное `ufw deny 9000` её не закроет: Docker пишет
+свои правила DNAT в iptables мимо UFW. Если понадобится ограничить доступ —
+только через `DOCKER-USER` chain или файрвол провайдера.
 
 Для `hizhina-sakhalin.ru` и `cms.hizhina-sakhalin.ru` оба proxy-сайта уже
 добавлены в стартовый образ: сайт работает сразу, ещё до первого входа в UI.
