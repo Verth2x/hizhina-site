@@ -43,7 +43,9 @@
     "notBookableSeparately": "Available only with a cabin booking. We agree on the ready time individually.",
     "cabinsLabel": "Cabins",
     "cabinsNote": "All cabins are the same — only the view differs. We will show the free ones when you book.",
-    "cabinRulesTitle": "House rules"
+    "cabinRulesTitle": "House rules",
+    "comingSoonBadge": "Coming soon",
+    "comingSoonText": "Available for booking soon ☺️"
   },
   "footer": {
     "privacy": "Privacy policy",

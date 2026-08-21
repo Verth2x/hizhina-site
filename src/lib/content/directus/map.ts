@@ -57,6 +57,7 @@ export type DirectusCabin = {
   name: string;
   description: string;
   meta: string;
+  coming_soon?: boolean | null;
   price_per_night: number;
   price_note?: string | null;
   price_unit?: string | null;
@@ -161,6 +162,7 @@ function mapCabin(row: DirectusCabin): Cabin {
   return {
     id: row.slug,
     name: row.name,
+    comingSoon: Boolean(row.coming_soon),
     description: row.description,
     meta: row.meta,
     pricePerNight: row.price_per_night,

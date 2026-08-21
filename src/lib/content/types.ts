@@ -30,6 +30,8 @@ export type HeroVideo = {
 export type Cabin = {
   id: string;
   name: string;
+  /** Домик ещё не сдаётся: вместо карточки показывается баннер «Скоро». */
+  comingSoon?: boolean;
   description: string;
   meta: string;
   pricePerNight: number;

@@ -71,6 +71,23 @@ export function Cabins({
                   }}
                 />
 
+                {/*
+                  Домик, который ещё не сдаётся, показываем как анонс:
+                  кадр остаётся на месте, а вместо цены и кнопок — короткая
+                  строка. Так секция сохраняет ритм, но не обещает того,
+                  что забронировать нельзя.
+                */}
+                {cabin.comingSoon ? (
+                  <div className="min-w-0 lg:self-center">
+                    <span className="border-action/40 text-action text-label inline-flex items-center rounded-full border px-3.5 py-1.5 uppercase">
+                      {messages.sections.comingSoonBadge}
+                    </span>
+                    <h3 className="text-h3 text-text-primary mt-6">{cabin.name}</h3>
+                    <p className="text-text-secondary mt-4 max-w-[34ch] font-light">
+                      {messages.sections.comingSoonText}
+                    </p>
+                  </div>
+                ) : (
                 <div className="min-w-0">
                   {/* Название домика: при одном типе было избыточно,
                       при нескольких — единственный способ их различить. */}
@@ -120,6 +137,7 @@ export function Cabins({
                     </div>
                   </div>
                 </div>
+                )}
               </article>
             );
           })}
