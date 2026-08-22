@@ -7,7 +7,7 @@
 - **Стек:** Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 · Directus 11 · Postgres 16
 - **Пакетный менеджер:** pnpm 10
 - **Хостинг:** свой VDS
-
+[![Codacy Security Scan](https://github.com/Verth2x/hizhina-site/actions/workflows/codacy.yml/badge.svg)](https://github.com/Verth2x/hizhina-site/actions/workflows/codacy.yml)
 ---
 
 ## Быстрый старт (локально)
