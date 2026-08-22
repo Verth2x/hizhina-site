@@ -78,5 +78,10 @@
   },
   "hero": {
     "eyebrow": "Sakhalin · retreat"
+  },
+  "cookie": {
+    "text": "This site uses cookies and Yandex.Metrica for visit statistics. By continuing to browse, you agree to this.",
+    "accept": "Got it",
+    "policyLink": "Learn more"
   }
 }
